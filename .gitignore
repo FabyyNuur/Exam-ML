@@ -1,0 +1,40 @@
+# Données volumineuses — télécharger manuellement (voir README)
+data/raw/detection_fraude.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Environnements
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MLflow / expérimentations
+mlruns/
+mlartifacts/
+
+# Modèles sauvegardés (trop lourds pour git)
+models/*.pkl
+models/*.joblib
+models/*.h5
+models/*.pt
+
+# Reports générés
+reports/figures/*.png
+reports/figures/*.pdf
