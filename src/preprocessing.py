@@ -9,7 +9,9 @@ from sklearn.impute import SimpleImputer
 # ─── Exercice 1 : Détection de fraude ────────────────────────────────────────
 
 def load_fraud_data(path: str) -> pd.DataFrame:
-    df = pd.read_csv(path)
+    df = pd.read_csv(path, sep=";")
+    if df.shape[1] == 1:
+        df = pd.read_csv(path)
     return df
 
 

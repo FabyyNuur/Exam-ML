@@ -1,83 +1,243 @@
-"""Utilitaires partagés : métriques, visualisations, helpers."""
+"""Utilitaires partagés : métriques, visualisations Plotly, helpers."""
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from sklearn.metrics import (
-    classification_report, confusion_matrix, roc_auc_score, roc_curve,
-    precision_recall_curve, average_precision_score,
+    classification_report,
+    confusion_matrix,
+    roc_auc_score,
+    roc_curve,
+    average_precision_score,
 )
 
-
-def plot_class_distribution(y, title="Distribution des classes", ax=None):
-    counts = pd.Series(y).value_counts()
-    if ax is None:
-        _, ax = plt.subplots()
-    ax.bar(counts.index.astype(str), counts.values, color=["steelblue", "tomato"])
-    ax.set_title(title)
-    ax.set_xlabel("Classe")
-    ax.set_ylabel("Nombre d'observations")
-    for i, v in enumerate(counts.values):
-        ax.text(i, v + 0.5, f"{v:,} ({v/len(y)*100:.1f}%)", ha="center")
-    return ax
+COLORS = {
+    "primary": "#4682B4",
+    "secondary": "#FF6347",
+    "accent": "#FF7F50",
+    "neutral": "#708090",
+}
 
 
-def plot_confusion_matrix(y_true, y_pred, labels=None, ax=None):
-    cm = confusion_matrix(y_true, y_pred)
-    if ax is None:
-        _, ax = plt.subplots()
-    sns.heatmap(
-        cm, annot=True, fmt="d", cmap="Blues",
-        xticklabels=labels or ["Négatif", "Positif"],
-        yticklabels=labels or ["Négatif", "Positif"],
-        ax=ax,
+def _is_subplot_figure(fig: go.Figure) -> bool:
+    return bool(getattr(fig, "_grid_ref", None))
+
+
+def apply_plotly_theme(fig: go.Figure) -> go.Figure:
+    """Applique un thème Plotly uniforme (dashboard moderne)."""
+    fig.update_layout(
+        template="plotly_white",
+        font=dict(family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif", size=13),
+        paper_bgcolor="#FFFFFF",
+        plot_bgcolor="#F8FAFC",
+        margin=dict(l=60, r=30, t=60, b=50),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        colorway=[COLORS["primary"], COLORS["secondary"], COLORS["accent"], COLORS["neutral"]],
     )
-    ax.set_xlabel("Prédit")
-    ax.set_ylabel("Réel")
-    ax.set_title("Matrice de confusion")
-    return ax
+    return fig
 
 
-def plot_roc_curve(y_true, y_score, model_name="Modèle", ax=None):
+def save_figure(fig: go.Figure, path: str, width: int = 1000, height: int = 600) -> go.Figure:
+    """Exporte la figure en PNG (nécessite kaleido) ou HTML en secours."""
+    fig = apply_plotly_theme(fig)
+    try:
+        fig.write_image(path, width=width, height=height, scale=2)
+    except Exception:
+        fig.write_html(path.replace(".png", ".html"))
+    return fig
+
+
+def show_figure(fig: go.Figure, path: str | None = None, width: int = 1000, height: int = 600) -> go.Figure:
+    """Affiche une figure Plotly thématisée et l'enregistre optionnellement."""
+    fig = apply_plotly_theme(fig)
+    fig.show()
+    if path:
+        save_figure(fig, path, width=width, height=height)
+    return fig
+
+
+def plot_class_distribution(
+    y,
+    title: str = "Distribution des classes",
+    fig: go.Figure | None = None,
+    row: int = 1,
+    col: int = 1,
+) -> go.Figure:
+    counts = pd.Series(y).value_counts().sort_index()
+    labels = counts.index.astype(str)
+    text = [f"{v:,} ({v / len(y) * 100:.1f}%)" for v in counts.values]
+
+    trace = go.Bar(
+        x=labels,
+        y=counts.values,
+        marker_color=[COLORS["primary"], COLORS["secondary"]][: len(counts)],
+        text=text,
+        textposition="outside",
+        name=title,
+    )
+
+    if fig is None:
+        fig = go.Figure(trace)
+        fig.update_layout(title=title, xaxis_title="Classe", yaxis_title="Nombre d'observations")
+        return fig
+
+    if _is_subplot_figure(fig):
+        fig.add_trace(trace, row=row, col=col)
+        fig.update_xaxes(title_text="Classe", row=row, col=col)
+        fig.update_yaxes(title_text="Nombre d'observations", row=row, col=col)
+    else:
+        fig.add_trace(trace)
+    return fig
+
+
+def plot_confusion_matrix(
+    y_true,
+    y_pred,
+    labels=None,
+    fig: go.Figure | None = None,
+    row: int = 1,
+    col: int = 1,
+) -> go.Figure:
+    cm = confusion_matrix(y_true, y_pred)
+    tick_labels = labels or ["Négatif", "Positif"]
+    trace = go.Heatmap(
+        z=cm,
+        x=tick_labels,
+        y=tick_labels,
+        colorscale="Blues",
+        showscale=False,
+        text=cm,
+        texttemplate="%{text}",
+        hovertemplate="Réel=%{y}<br>Prédit=%{x}<br>Count=%{z}<extra></extra>",
+    )
+
+    if fig is None:
+        fig = go.Figure(trace)
+        fig.update_layout(
+            title="Matrice de confusion",
+            xaxis_title="Prédit",
+            yaxis_title="Réel",
+        )
+        return fig
+
+    if _is_subplot_figure(fig):
+        fig.add_trace(trace, row=row, col=col)
+        fig.update_xaxes(title_text="Prédit", row=row, col=col)
+        fig.update_yaxes(title_text="Réel", row=row, col=col)
+    else:
+        fig.add_trace(trace)
+    return fig
+
+
+def plot_roc_curve(
+    y_true,
+    y_score,
+    model_name: str = "Modèle",
+    fig: go.Figure | None = None,
+    row: int = 1,
+    col: int = 1,
+    add_diagonal: bool | None = None,
+) -> tuple[go.Figure, float]:
     fpr, tpr, _ = roc_curve(y_true, y_score)
     auc = roc_auc_score(y_true, y_score)
-    if ax is None:
-        _, ax = plt.subplots()
-    ax.plot(fpr, tpr, label=f"{model_name} (AUC = {auc:.3f})")
-    ax.plot([0, 1], [0, 1], "k--", linewidth=0.8)
-    ax.set_xlabel("Taux faux positifs")
-    ax.set_ylabel("Taux vrais positifs")
-    ax.set_title("Courbe ROC")
-    ax.legend()
-    return ax, auc
+    if add_diagonal is None:
+        add_diagonal = fig is None
+
+    trace = go.Scatter(
+        x=fpr,
+        y=tpr,
+        mode="lines",
+        name=f"{model_name} (AUC = {auc:.3f})",
+        line=dict(color=COLORS["primary"]),
+    )
+    diagonal = go.Scatter(
+        x=[0, 1],
+        y=[0, 1],
+        mode="lines",
+        line=dict(color=COLORS["neutral"], dash="dash"),
+        name="Aléatoire",
+        showlegend=False,
+        hoverinfo="skip",
+    )
+
+    if fig is None:
+        traces = [trace, diagonal] if add_diagonal else [trace]
+        fig = go.Figure(traces)
+        fig.update_layout(
+            title="Courbe ROC",
+            xaxis_title="Taux faux positifs",
+            yaxis_title="Taux vrais positifs",
+        )
+        return fig, auc
+
+    if _is_subplot_figure(fig):
+        fig.add_trace(trace, row=row, col=col)
+        if add_diagonal:
+            fig.add_trace(diagonal, row=row, col=col)
+        fig.update_xaxes(title_text="Taux faux positifs", row=row, col=col)
+        fig.update_yaxes(title_text="Taux vrais positifs", row=row, col=col)
+    else:
+        fig.add_trace(trace)
+        if add_diagonal:
+            fig.add_trace(diagonal)
+    return fig, auc
+
+
+def plot_silhouette(
+    silhouette_scores,
+    k_range,
+    fig: go.Figure | None = None,
+    row: int = 1,
+    col: int = 1,
+) -> go.Figure:
+    best_k = k_range[int(np.argmax(silhouette_scores))]
+    trace = go.Scatter(
+        x=list(k_range),
+        y=silhouette_scores,
+        mode="lines+markers",
+        name="Silhouette",
+        line=dict(color=COLORS["primary"]),
+    )
+    vline = go.Scatter(
+        x=[best_k, best_k],
+        y=[min(silhouette_scores), max(silhouette_scores)],
+        mode="lines",
+        name=f"Meilleur k={best_k}",
+        line=dict(color=COLORS["secondary"], dash="dash"),
+    )
+
+    if fig is None:
+        fig = go.Figure([trace, vline])
+        fig.update_layout(
+            title="Silhouette Score par nombre de clusters",
+            xaxis_title="Nombre de clusters k",
+            yaxis_title="Silhouette Score",
+        )
+        return fig
+
+    if _is_subplot_figure(fig):
+        fig.add_trace(trace, row=row, col=col)
+        fig.add_trace(vline, row=row, col=col)
+        fig.update_xaxes(title_text="k", row=row, col=col)
+        fig.update_yaxes(title_text="Silhouette Score", row=row, col=col)
+    else:
+        fig.add_trace(trace)
+        fig.add_trace(vline)
+    return fig
 
 
 def evaluate_classifier(y_true, y_pred, y_score=None, model_name="Modèle"):
-    """Affiche toutes les métriques de classification."""
-    print(f"\n{'='*50}")
-    print(f"  {model_name}")
-    print(f"{'='*50}")
-    print(classification_report(y_true, y_pred, target_names=["Normal", "Fraude"]))
+    """Affiche métriques de classification en cartes HTML."""
+    from src.display import show_classification_report, show_metrics_row
+
+    show_classification_report(y_true, y_pred, model_name=model_name)
+    metrics = {}
     if y_score is not None:
-        auc = roc_auc_score(y_true, y_score)
-        ap = average_precision_score(y_true, y_score)
-        print(f"ROC-AUC  : {auc:.4f}")
-        print(f"Avg Prec : {ap:.4f}")
+        metrics["ROC-AUC"] = f"{roc_auc_score(y_true, y_score):.4f}"
+        metrics["Avg Precision"] = f"{average_precision_score(y_true, y_score):.4f}"
+        show_metrics_row(metrics)
     return {
         "model": model_name,
         "roc_auc": roc_auc_score(y_true, y_score) if y_score is not None else None,
     }
-
-
-def plot_silhouette(silhouette_scores, k_range, ax=None):
-    if ax is None:
-        _, ax = plt.subplots()
-    ax.plot(k_range, silhouette_scores, "o-", color="steelblue")
-    best_k = k_range[np.argmax(silhouette_scores)]
-    ax.axvline(best_k, color="tomato", linestyle="--", label=f"Meilleur k={best_k}")
-    ax.set_xlabel("Nombre de clusters k")
-    ax.set_ylabel("Silhouette Score")
-    ax.set_title("Silhouette Score par nombre de clusters")
-    ax.legend()
-    return ax

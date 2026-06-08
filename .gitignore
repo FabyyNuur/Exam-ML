@@ -27,6 +27,7 @@ Thumbs.db
 
 # MLflow / expérimentations
 mlruns/
+mlflow.db
 mlartifacts/
 
 # Modèles sauvegardés (trop lourds pour git)

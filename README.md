@@ -15,7 +15,8 @@ Exam-ML/
 ├── src/
 │   ├── preprocessing.py        # Fonctions de nettoyage et feature engineering
 │   ├── models.py               # Wrappers et helpers de modèles
-│   └── utils.py                # Utilitaires (métriques, visualisations)
+│   ├── display.py              # Composants HTML (hero, KPI, badges, tableaux)
+│   └── utils.py                # Utilitaires (métriques, visualisations Plotly)
 ├── mlops/
 │   ├── pipeline.py             # Pipeline de données avec validation
 │   ├── api/
@@ -44,6 +45,16 @@ source venv/bin/activate        # Windows : venv\Scripts\activate
 pip install -r requirements.txt
 jupyter notebook
 ```
+
+## Affichage notebook
+
+Les notebooks utilisent [`src/display.py`](src/display.py) pour un rendu HTML cohérent (style dashboard) :
+
+- `init_notebook_theme()` — injecte le CSS global (à appeler une fois en début de session)
+- `show_hero`, `show_section`, `show_insight`, `show_metrics_row`, `show_badge`, etc.
+- Graphiques Plotly harmonisés via `show_figure()` dans [`src/utils.py`](src/utils.py)
+
+Après modification du code source, redémarrer le kernel Jupyter ou réexécuter la cellule d'imports.
 
 ## Exercices
 
