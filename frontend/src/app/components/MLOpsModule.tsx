@@ -106,7 +106,7 @@ export function MLOpsModule() {
                   <span className="font-bold text-slate-800 text-sm">exam-ml-frontend</span>
                   <span className="text-xs text-blue-700 font-bold px-2 py-1 bg-blue-100 rounded-md">REACT</span>
                 </div>
-                <div className="text-sm text-slate-600">Vite + Tailwind — Dashboard interactif</div>
+                <div className="text-sm text-slate-600">Render Static Site — Vite + Tailwind</div>
               </div>
             </div>
           </div>

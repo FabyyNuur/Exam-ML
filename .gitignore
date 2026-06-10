@@ -37,7 +37,12 @@ models/*.joblib
 models/*.h5
 models/*.pt
 
-# Reports générés (figures versionnées pour déploiement API)
+# Reports générés (non versionnés — régénérer via scripts/export_analytics.py)
+reports/analytics/
+
+# Figures notebooks (régénérées via show_figure) — Plotly JSON suffit pour le dashboard
+reports/figures/*
+!reports/figures/mlops_monitoring.png
 reports/figures/*.pdf
 
 # Frontend

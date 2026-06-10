@@ -6,8 +6,7 @@ Détection de fraude bancaire, segmentation client et architecture MLOps avec da
 
 ```
 Exam-ML/
-├── vercel.json                 # Build et routing Vercel (frontend)
-├── render.yaml                 # Blueprint Render (API)
+├── render.yaml                 # Blueprint Render (API + frontend static)
 ├── requirements.txt            # Dépendances prod API (Render)
 ├── requirements-dev.txt        # Notebooks, lint et dev local
 ├── data/raw/                   # Données (symlinks ou CSV locaux)
@@ -25,8 +24,8 @@ Exam-ML/
 │   └── pipeline.py             # Pipeline reproductible CLI
 ├── tests/                      # Tests unitaires et API
 ├── reports/
-│   ├── figures/                # Graphiques PNG (notebooks)
-│   └── analytics/              # JSON Recharts + plotly/*.json (graphiques interactifs)
+│   ├── figures/                # PNG notebooks (gitignorés) + mlops_monitoring.png
+│   └── analytics/              # JSON Recharts + plotly/*.json (gitignoré, voir export ci-dessous)
 └── docs/
     ├── rapport_technique.md
     └── presentation.md
@@ -47,6 +46,13 @@ source .venv/bin/activate   # obligatoire — ne pas utiliser conda (base) direc
 pip install -r requirements-dev.txt   # notebooks + lint + API + tests
 
 cd frontend && npm install
+```
+
+Après clone, générer les analytics pour le dashboard (nécessite `data/raw/data_cluster.csv`) :
+
+```bash
+python scripts/create_ci_models.py   # ou train_and_export.py pour des modèles réels
+python scripts/export_analytics.py
 ```
 
 Pour l'API seule (sans notebooks ni tests) : `pip install -r requirements.txt`
@@ -104,7 +110,7 @@ Interface : http://localhost:5173 (proxy API vers :8000)
 
 ### Preview production locale
 
-En production, le frontend est sur **Vercel** et l'API sur **Render** (voir § Déploiement cloud).
+En production, le frontend et l'API sont sur **Render** (voir § Déploiement cloud).
 
 Pour simuler la prod en local, lancer l'API et le build Vite en parallèle :
 
@@ -194,19 +200,23 @@ Profils clients identifiés : **Premium**, **Digital** (k=2 sur features API).
 
 ## Déploiement cloud
 
-Architecture hybride : **Vercel** (frontend) + **Render** (API).
+Tout le projet se déploie sur **Render** via le blueprint [`render.yaml`](render.yaml) :
 
-### API sur Render
+| Service | Type Render | URL par défaut |
+|---------|-------------|----------------|
+| `exam-ml-api` | Web Service (Python) | `https://exam-ml-api.onrender.com` |
+| `exam-ml-frontend` | Static Site (Vite) | `https://exam-ml-frontend.onrender.com` |
 
-1. Connecter le dépôt à Render, blueprint `render.yaml`
-2. Le build génère les modèles CI et les analytics JSON
-3. Configurer `CORS_ORIGINS` avec l'URL Vercel finale
+### Mise en place
 
-### Frontend sur Vercel
+1. Connecter le dépôt GitHub à Render → **New Blueprint**
+2. Render crée les deux services à partir de `render.yaml`
+3. Le build API exécute `create_ci_models.py` + `export_analytics.py`
+4. Le build frontend injecte `VITE_API_URL=https://exam-ml-api.onrender.com`
 
-1. Importer le dépôt, racine = `Exam-ML`
-2. `vercel.json` configure le build Vite automatiquement
-3. Variable d'environnement : `VITE_API_URL=https://exam-ml-api.onrender.com` (URL Render)
+Variables déjà configurées dans le blueprint :
+- **API** : `CORS_ORIGINS` autorise le frontend Render + localhost
+- **Frontend** : `VITE_API_URL` pointe vers l'API Render
 
 Voir [`frontend/.env.example`](frontend/.env.example) pour le dev local.
 
