@@ -1,8 +1,0 @@
-{
-  "models": [
-    {"name": "RégLog", "key": "logistic_regression", "roc": 85.2, "precision": 85.2, "f1": 85.2, "rappel": 85.2},
-    {"name": "RanForest", "key": "random_forest", "roc": 94.1, "precision": 94.1, "f1": 94.1, "rappel": 94.1},
-    {"name": "XGBoost", "key": "xgboost", "roc": 99.6, "precision": 99.6, "f1": 99.6, "rappel": 99.6},
-    {"name": "LightGBM", "key": "lightgbm", "roc": 99.4, "precision": 99.4, "f1": 99.4, "rappel": 99.4}
-  ]
-}
