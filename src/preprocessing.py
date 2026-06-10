@@ -1,12 +1,12 @@
-"""Fonctions de prétraitement partagées entre les deux exercices."""
+"""Fonctions de prétraitement"""
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
-
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # ─── Exercice 1 : Détection de fraude ────────────────────────────────────────
+
 
 def load_fraud_data(path: str) -> pd.DataFrame:
     df = pd.read_csv(path, sep=";")
@@ -19,10 +19,16 @@ def engineer_fraud_features(df: pd.DataFrame) -> pd.DataFrame:
     """Feature engineering spécifique aux transactions financières."""
     df = df.copy()
     # Erreur de solde émetteur / destinataire
-    df["error_balance_orig"] = df["newbalanceOrig"] - (df["oldbalanceOrg"] - df["amount"])
-    df["error_balance_dest"] = df["newbalanceDest"] - (df["oldbalanceDest"] + df["amount"])
+    df["error_balance_orig"] = df["newbalanceOrig"] - (
+        df["oldbalanceOrg"] - df["amount"]
+    )
+    df["error_balance_dest"] = df["newbalanceDest"] - (
+        df["oldbalanceDest"] + df["amount"]
+    )
     # Indicateur de compte vidé
-    df["orig_zeroed"] = ((df["oldbalanceOrg"] > 0) & (df["newbalanceOrig"] == 0)).astype(int)
+    df["orig_zeroed"] = (
+        (df["oldbalanceOrg"] > 0) & (df["newbalanceOrig"] == 0)
+    ).astype(int)
     return df
 
 
@@ -33,6 +39,7 @@ def encode_transaction_type(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ─── Exercice 2 : Segmentation client ───────────────────────────────────────
+
 
 def load_cluster_data(path: str) -> pd.DataFrame:
     df = pd.read_csv(path, sep="\t", on_bad_lines="skip")

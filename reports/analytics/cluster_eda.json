@@ -1,0 +1,79 @@
+{
+  "total_customers": 2240,
+  "income_distribution": [
+    {
+      "range": "0–25k",
+      "count": 242,
+      "pct": 10.8
+    },
+    {
+      "range": "25–50k",
+      "count": 818,
+      "pct": 36.5
+    },
+    {
+      "range": "50–75k",
+      "count": 797,
+      "pct": 35.6
+    },
+    {
+      "range": "75–100k",
+      "count": 346,
+      "pct": 15.4
+    },
+    {
+      "range": "100–150k",
+      "count": 5,
+      "pct": 0.2
+    },
+    {
+      "range": "150k+",
+      "count": 8,
+      "pct": 0.4
+    }
+  ],
+  "spending_by_channel": [
+    {
+      "channel": "Wines",
+      "total": 680816.0,
+      "avg": 303.9
+    },
+    {
+      "channel": "Fruits",
+      "total": 58917.0,
+      "avg": 26.3
+    },
+    {
+      "channel": "MeatProducts",
+      "total": 373968.0,
+      "avg": 166.9
+    },
+    {
+      "channel": "FishProducts",
+      "total": 84057.0,
+      "avg": 37.5
+    },
+    {
+      "channel": "SweetProducts",
+      "total": 60621.0,
+      "avg": 27.1
+    },
+    {
+      "channel": "GoldProds",
+      "total": 98609.0,
+      "avg": 44.0
+    }
+  ],
+  "campaign_response": [
+    {
+      "label": "0",
+      "count": 1906,
+      "pct": 85.1
+    },
+    {
+      "label": "1",
+      "count": 334,
+      "pct": 14.9
+    }
+  ]
+}

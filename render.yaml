@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: exam-ml-api
+    runtime: python
+    plan: free
+    autoDeploy: true
+    buildCommand: |
+      pip install -r requirements.txt
+      python scripts/create_ci_models.py
+      python scripts/export_analytics.py
+    startCommand: uvicorn mlops.api.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.10"
+      - key: CORS_ORIGINS
+        value: "https://exam-ml.vercel.app,http://localhost:5173,http://127.0.0.1:5173"

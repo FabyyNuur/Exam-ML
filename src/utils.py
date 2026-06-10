@@ -3,14 +3,8 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from sklearn.metrics import (
-    classification_report,
-    confusion_matrix,
-    roc_auc_score,
-    roc_curve,
-    average_precision_score,
-)
+from sklearn.metrics import (average_precision_score, confusion_matrix,
+                             roc_auc_score, roc_curve)
 
 COLORS = {
     "primary": "#4682B4",
@@ -28,17 +22,27 @@ def apply_plotly_theme(fig: go.Figure) -> go.Figure:
     """Applique un thème Plotly uniforme (dashboard moderne)."""
     fig.update_layout(
         template="plotly_white",
-        font=dict(family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif", size=13),
+        font=dict(
+            family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+            size=13,
+        ),
         paper_bgcolor="#FFFFFF",
         plot_bgcolor="#F8FAFC",
         margin=dict(l=60, r=30, t=60, b=50),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        colorway=[COLORS["primary"], COLORS["secondary"], COLORS["accent"], COLORS["neutral"]],
+        colorway=[
+            COLORS["primary"],
+            COLORS["secondary"],
+            COLORS["accent"],
+            COLORS["neutral"],
+        ],
     )
     return fig
 
 
-def save_figure(fig: go.Figure, path: str, width: int = 1000, height: int = 600) -> go.Figure:
+def save_figure(
+    fig: go.Figure, path: str, width: int = 1000, height: int = 600
+) -> go.Figure:
     """Exporte la figure en PNG (nécessite kaleido) ou HTML en secours."""
     fig = apply_plotly_theme(fig)
     try:
@@ -48,7 +52,9 @@ def save_figure(fig: go.Figure, path: str, width: int = 1000, height: int = 600)
     return fig
 
 
-def show_figure(fig: go.Figure, path: str | None = None, width: int = 1000, height: int = 600) -> go.Figure:
+def show_figure(
+    fig: go.Figure, path: str | None = None, width: int = 1000, height: int = 600
+) -> go.Figure:
     """Affiche une figure Plotly thématisée et l'enregistre optionnellement."""
     fig = apply_plotly_theme(fig)
     fig.show()
@@ -79,7 +85,9 @@ def plot_class_distribution(
 
     if fig is None:
         fig = go.Figure(trace)
-        fig.update_layout(title=title, xaxis_title="Classe", yaxis_title="Nombre d'observations")
+        fig.update_layout(
+            title=title, xaxis_title="Classe", yaxis_title="Nombre d'observations"
+        )
         return fig
 
     if _is_subplot_figure(fig):
@@ -138,9 +146,14 @@ def plot_roc_curve(
     row: int = 1,
     col: int = 1,
     add_diagonal: bool | None = None,
+    max_roc_points: int | None = 200,
 ) -> tuple[go.Figure, float]:
     fpr, tpr, _ = roc_curve(y_true, y_score)
     auc = roc_auc_score(y_true, y_score)
+    if max_roc_points is not None:
+        from src.charts.sampling import subsample_curve
+
+        fpr, tpr = subsample_curve(fpr, tpr, max_roc_points)
     if add_diagonal is None:
         add_diagonal = fig is None
 

@@ -1,0 +1,22 @@
+-r requirements.txt
+
+# Visualisation (notebooks + export figures)
+plotly>=5.15.0
+kaleido>=0.2.1
+shap>=0.43.0
+
+# MLOps local
+mlflow>=2.7.0
+
+# Notebooks
+jupyter>=1.0.0
+ipykernel>=6.25.0
+
+# Lint / format
+black>=24.0.0
+isort>=5.13.0
+flake8>=7.0.0
+
+# Tests (Python >=3.9 ; pytest 9.x nécessite >=3.10)
+pytest>=8.3.0
+httpx>=0.27.0

@@ -167,32 +167,44 @@ def init_notebook_theme() -> None:
 
 def show_hero(title: str, objective: str, plan_items: list[str]) -> None:
     items = "".join(f"<li>{_esc(item)}</li>" for item in plan_items)
-    display(HTML(f"""
+    display(
+        HTML(
+            f"""
     <div class="ml-root ml-hero">
         <h1>{_esc(title)}</h1>
         <div class="ml-objective"><strong>Objectif :</strong> {_esc(objective)}</div>
         <ol>{items}</ol>
     </div>
-    """))
+    """
+        )
+    )
 
 
 def show_section(title: str, subtitle: str | None = None) -> None:
     sub = f'<div class="ml-subtitle">{_esc(subtitle)}</div>' if subtitle else ""
-    display(HTML(f"""
+    display(
+        HTML(
+            f"""
     <div class="ml-root ml-section">
         <h2>{_esc(title)}</h2>
         {sub}
     </div>
-    """))
+    """
+        )
+    )
 
 
 def _show_card(text: str, label: str, css_class: str) -> None:
-    display(HTML(f"""
+    display(
+        HTML(
+            f"""
     <div class="ml-root ml-card {css_class}">
         <div class="ml-label">{_esc(label)}</div>
         <div>{text}</div>
     </div>
-    """))
+    """
+        )
+    )
 
 
 def show_insight(text: str) -> None:
@@ -213,7 +225,8 @@ def show_success(text: str) -> None:
 
 def show_metrics_row(metrics: dict[str, Any]) -> None:
     tiles = "".join(
-        f'<div class="ml-metric"><div class="ml-value">{_esc(v)}</div><div class="ml-key">{_esc(k)}</div></div>'
+        f'<div class="ml-metric"><div class="ml-value">{_esc(v)}</div>'
+        f'<div class="ml-key">{_esc(k)}</div></div>'
         for k, v in metrics.items()
     )
     display(HTML(f'<div class="ml-root ml-metrics">{tiles}</div>'))
@@ -221,19 +234,25 @@ def show_metrics_row(metrics: dict[str, Any]) -> None:
 
 def show_badge(label: str, status: str = "default") -> None:
     bg, color = _BADGE_STYLES.get(status, _BADGE_STYLES["default"])
-    display(HTML(
-        f'<span class="ml-badge" style="background:{bg};color:{color};">{_esc(label)}</span>'
-    ))
+    display(
+        HTML(
+            f'<span class="ml-badge" style="background:{bg};color:{color};">{_esc(label)}</span>'
+        )
+    )
 
 
 def show_findings_list(items: list[str], title: str = "Points clés") -> None:
     lis = "".join(f"<li>{_esc(item)}</li>" for item in items)
-    display(HTML(f"""
+    display(
+        HTML(
+            f"""
     <div class="ml-root ml-card insight">
         <div class="ml-label">{_esc(title)}</div>
         <ul class="ml-findings">{lis}</ul>
     </div>
-    """))
+    """
+        )
+    )
 
 
 def show_architecture_card(title: str, steps: list[str]) -> None:
@@ -243,12 +262,16 @@ def show_architecture_card(title: str, steps: list[str]) -> None:
             parts.append('<span class="ml-arch-arrow">→</span>')
         parts.append(f'<span class="ml-arch-step">{_esc(step)}</span>')
     flow = "".join(parts)
-    display(HTML(f"""
+    display(
+        HTML(
+            f"""
     <div class="ml-root ml-card info">
         <div class="ml-label">{_esc(title)}</div>
         <div class="ml-arch">{flow}</div>
     </div>
-    """))
+    """
+        )
+    )
 
 
 def show_table_html(df: pd.DataFrame, title: str | None = None) -> None:
@@ -257,9 +280,11 @@ def show_table_html(df: pd.DataFrame, title: str | None = None) -> None:
     display(HTML(f'<div class="ml-root ml-card">{title_html}{table_html}</div>'))
 
 
-def show_classification_report(y_true, y_pred, model_name: str = "Modèle") -> dict[str, float]:
+def show_classification_report(
+    y_true, y_pred, model_name: str = "Modèle"
+) -> dict[str, float]:
     """Affiche un rapport de classification en tableau HTML."""
-    from sklearn.metrics import classification_report, roc_auc_score, average_precision_score
+    from sklearn.metrics import classification_report
 
     report = classification_report(
         y_true, y_pred, target_names=["Normal", "Fraude"], output_dict=True
@@ -267,13 +292,15 @@ def show_classification_report(y_true, y_pred, model_name: str = "Modèle") -> d
     rows = []
     for label in ["Normal", "Fraude"]:
         r = report[label]
-        rows.append({
-            "Classe": label,
-            "Precision": f"{r['precision']:.3f}",
-            "Recall": f"{r['recall']:.3f}",
-            "F1": f"{r['f1-score']:.3f}",
-            "Support": int(r["support"]),
-        })
+        rows.append(
+            {
+                "Classe": label,
+                "Precision": f"{r['precision']:.3f}",
+                "Recall": f"{r['recall']:.3f}",
+                "F1": f"{r['f1-score']:.3f}",
+                "Support": int(r["support"]),
+            }
+        )
     df = pd.DataFrame(rows)
     show_section(model_name)
     show_table_html(df, title="Rapport de classification")

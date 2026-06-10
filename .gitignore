@@ -2,6 +2,7 @@
 data/raw/detection_fraude.csv
 
 # Python
+.pytest_cache/
 __pycache__/
 *.py[cod]
 *.pyo
@@ -36,6 +37,9 @@ models/*.joblib
 models/*.h5
 models/*.pt
 
-# Reports générés
-reports/figures/*.png
+# Reports générés (figures versionnées pour déploiement API)
 reports/figures/*.pdf
+
+# Frontend
+frontend/node_modules/
+frontend/dist/

@@ -1,40 +1,19 @@
-# Core
+# Core (API + entraînement)
 pandas>=2.0.0
 numpy>=1.24.0,<2.0.0
-pyarrow>=18.0.0
 scipy>=1.11.0
-
-# Visualisation
-plotly>=5.15.0
-kaleido>=0.2.1
 
 # Machine Learning
 scikit-learn>=1.3.0
 xgboost>=2.0.0
 lightgbm>=4.0.0
-
-# Deep Learning
-tensorflow>=2.13.0
-# torch>=2.0.0  # décommenter si préféré à TensorFlow
-
-# Déséquilibre des classes
 imbalanced-learn>=0.11.0
+joblib>=1.3.0
 
-# Interprétabilité
-shap>=0.43.0
-
-# MLOps
-mlflow>=2.7.0
-great-expectations>=0.17.0
-
-# API / Déploiement
+# API
 fastapi>=0.103.0
-uvicorn>=0.23.0
+uvicorn[standard]>=0.23.0
 pydantic>=2.0.0
 
-# Dashboard (>=1.54.0 : correctifs SSRF Windows, validation upload fichiers)
-streamlit>=1.54.0
-
-# Notebook
-jupyter>=1.0.0
-ipykernel>=6.25.0
+# Visualisation (export charts dashboard)
+plotly>=5.15.0
