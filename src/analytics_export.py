@@ -112,9 +112,7 @@ def export_fraud_smote(fraud_path: str | Path | None = None) -> dict:
     if fraud_path is not None and Path(fraud_path).is_file():
         df = load_fraud_data(str(fraud_path))
         X, y = _prepare_fraud_matrix(df)
-        X_train, _, y_train, _ = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
-        )
+        X_train, _, y_train, _ = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
         scaler = StandardScaler()
         X_train_scaled = scaler.fit_transform(X_train)
         smote = SMOTE(random_state=42, sampling_strategy=0.1)

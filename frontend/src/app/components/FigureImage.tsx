@@ -7,10 +7,9 @@ interface FigureImageProps {
   title?: string;
   caption?: string;
   className?: string;
-  bare?: boolean;
 }
 
-export function FigureImage({ filename, title, caption, className = '', bare = false }: FigureImageProps) {
+export function FigureImage({ filename, title, caption, className = '' }: FigureImageProps) {
   const [error, setError] = useState(false);
 
   if (error) {
@@ -23,19 +22,6 @@ export function FigureImage({ filename, title, caption, className = '', bare = f
     );
   }
 
-  const image = (
-    <img
-      src={api.figureUrl(filename)}
-      alt={title ?? filename}
-      className="w-full h-auto object-contain"
-      onError={() => setError(true)}
-    />
-  );
-
-  if (bare) {
-    return <div className={className}>{image}</div>;
-  }
-
   return (
     <div className={`bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden ${className}`}>
       {title && (
@@ -44,7 +30,12 @@ export function FigureImage({ filename, title, caption, className = '', bare = f
           {caption && <p className="text-xs text-slate-500 mt-1">{caption}</p>}
         </div>
       )}
-      {image}
+      <img
+        src={api.figureUrl(filename)}
+        alt={title ?? filename}
+        className="w-full h-auto object-contain"
+        onError={() => setError(true)}
+      />
     </div>
   );
 }

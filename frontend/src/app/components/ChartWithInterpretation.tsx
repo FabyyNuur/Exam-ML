@@ -43,8 +43,8 @@ export function ChartWithInterpretation({
   height?: number;
   variant?: Variant;
 }) {
-  if (!hasDistinctInterpretation(figure)) {
-    return (
+  return (
+    <div className="flex flex-col gap-3 w-full">
       <ChartPanel
         filename={filename}
         title={figure?.title}
@@ -52,31 +52,12 @@ export function ChartWithInterpretation({
         height={height}
         className="w-full"
       />
-    );
-  }
-
-  return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-sm w-full overflow-hidden">
-      {(figure?.title || figure?.caption) && (
-        <div className="px-4 py-3 border-b border-slate-100">
-          {figure?.title && (
-            <h4 className="text-sm font-bold text-slate-800 uppercase">
-              {figure.title}
-            </h4>
-          )}
-          {figure?.caption && (
-            <p className="text-xs text-slate-500 mt-1">{figure.caption}</p>
-          )}
-        </div>
+      {hasDistinctInterpretation(figure) && (
+        <InterpretationBlock
+          text={figure!.interpretation!}
+          variant={variant}
+        />
       )}
-      <div className="flex flex-col lg:flex-row">
-        <div className="flex-1 min-w-0 p-2">
-          <ChartPanel filename={filename} height={height} bare className="w-full" />
-        </div>
-        <div className="lg:w-80 shrink-0 border-t lg:border-t-0 lg:border-l border-slate-100 p-4 flex items-center">
-          <InterpretationBlock text={figure!.interpretation!} variant={variant} />
-        </div>
-      </div>
     </div>
   );
 }
