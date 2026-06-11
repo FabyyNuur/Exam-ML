@@ -163,7 +163,7 @@ Interface : http://localhost:4173
 
 ## Tests
 
-23 tests (API, preprocessing, pipeline) :
+27 tests (API, preprocessing, pipeline) :
 
 ```bash
 pytest tests/ -v

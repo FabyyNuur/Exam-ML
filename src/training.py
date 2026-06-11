@@ -8,13 +8,17 @@ from pathlib import Path
 import pandas as pd
 from imblearn.over_sampling import SMOTE
 from sklearn.cluster import KMeans
-from sklearn.metrics import (davies_bouldin_score, f1_score, precision_score,
-                             recall_score, roc_auc_score, silhouette_score)
+from sklearn.metrics import (
+    davies_bouldin_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+    silhouette_score,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from src.constants import (CLUSTER_API_COLUMNS, FRAUD_FEATURE_COLUMNS,
-                           FRAUD_THRESHOLD, TYPE_MAP)
 from src.analytics_export import (
     export_all_analytics,
     export_cluster_eda,
@@ -24,13 +28,23 @@ from src.analytics_export import (
     export_fraud_models,
 )
 from src.charts.export import export_all_charts
-from src.models import (FRAUD_MODELS, cross_validate_models, log_model_mlflow,
-                        save_model)
-from src.preprocessing import (clean_customer_data, engineer_customer_features,
-                               engineer_fraud_features, load_cluster_data,
-                               load_fraud_data)
+from src.constants import (
+    CLUSTER_API_COLUMNS,
+    FRAUD_FEATURE_COLUMNS,
+    FRAUD_THRESHOLD,
+    TYPE_MAP,
+)
+from src.models import FRAUD_MODELS, cross_validate_models, log_model_mlflow, save_model
+from src.preprocessing import (
+    clean_customer_data,
+    engineer_customer_features,
+    engineer_fraud_features,
+    load_cluster_data,
+    load_fraud_data,
+)
 
 RANDOM_STATE = 42
+
 
 def prepare_fraud_matrix(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     """Prépare X/y fraude avec encodage aligné sur l'API FastAPI."""
@@ -121,9 +135,7 @@ def train_fraud_model(
     if metadata_path.exists():
         existing = json.loads(metadata_path.read_text(encoding="utf-8"))
     existing["fraud"] = metrics
-    metadata_path.write_text(
-        json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    metadata_path.write_text(json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8")
 
     if log_mlflow:
         log_model_mlflow(
@@ -188,9 +200,7 @@ def train_cluster_model(
     if metadata_path.exists():
         existing = json.loads(metadata_path.read_text(encoding="utf-8"))
     existing["cluster"] = metrics
-    metadata_path.write_text(
-        json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    metadata_path.write_text(json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8")
 
     if log_mlflow:
         log_model_mlflow(
@@ -215,9 +225,7 @@ def train_all(
     """Entraîne et exporte les deux modèles."""
     models_dir = Path(models_dir)
     fraud_raw = train_fraud_model(fraud_path, models_dir, log_mlflow=log_mlflow)
-    cluster_metrics = train_cluster_model(
-        cluster_path, models_dir, log_mlflow=log_mlflow
-    )
+    cluster_metrics = train_cluster_model(cluster_path, models_dir, log_mlflow=log_mlflow)
 
     cv_results = fraud_raw.pop("_cv_results", None)
     fraud_metrics = fraud_raw
@@ -228,9 +236,7 @@ def train_all(
         existing = json.loads(metadata_path.read_text(encoding="utf-8"))
     existing["fraud"] = fraud_metrics
     existing["cluster"] = cluster_metrics
-    metadata_path.write_text(
-        json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    metadata_path.write_text(json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8")
 
     export_all_analytics(
         fraud_path,

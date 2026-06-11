@@ -13,7 +13,6 @@ from sklearn.metrics import davies_bouldin_score, silhouette_score
 from sklearn.preprocessing import StandardScaler
 
 from src.constants import CLUSTER_API_COLUMNS, FRAUD_FEATURE_COLUMNS, TYPE_MAP
-from src.models import FRAUD_MODELS
 from src.preprocessing import (
     clean_customer_data,
     engineer_customer_features,
@@ -36,6 +35,7 @@ def _prepare_cluster_matrix(df: pd.DataFrame) -> pd.DataFrame:
     df = clean_customer_data(df)
     df = engineer_customer_features(df)
     return df[CLUSTER_API_COLUMNS].astype(float)
+
 
 ROOT = Path(__file__).resolve().parent.parent
 ANALYTICS_DIR = ROOT / "reports" / "analytics"
@@ -71,12 +71,19 @@ def export_fraud_eda(fraud_path: str | Path) -> dict:
 
     payload = {
         "class_balance": [
-            {"label": "Légitime", "count": legit_count, "pct": round(100 * legit_count / total, 2)},
-            {"label": "Fraude", "count": fraud_count, "pct": round(100 * fraud_count / total, 2)},
+            {
+                "label": "Légitime",
+                "count": legit_count,
+                "pct": round(100 * legit_count / total, 2),
+            },
+            {
+                "label": "Fraude",
+                "count": fraud_count,
+                "pct": round(100 * fraud_count / total, 2),
+            },
         ],
         "fraud_by_type": [
-            {"type": row["type"], "fraud": int(row["fraud"])}
-            for _, row in fraud_by_type.iterrows()
+            {"type": row["type"], "fraud": int(row["fraud"])} for _, row in fraud_by_type.iterrows()
         ],
         "total_transactions": total,
     }
@@ -89,14 +96,16 @@ def export_fraud_models(cv_results: dict) -> dict:
     models = []
     for name, scores in cv_results.items():
         roc = round(scores["mean"] * 100, 1)
-        models.append({
-            "name": MODEL_DISPLAY_NAMES.get(name, name),
-            "key": name,
-            "roc": roc,
-            "precision": roc,
-            "f1": roc,
-            "rappel": roc,
-        })
+        models.append(
+            {
+                "name": MODEL_DISPLAY_NAMES.get(name, name),
+                "key": name,
+                "roc": roc,
+                "precision": roc,
+                "f1": roc,
+                "rappel": roc,
+            }
+        )
     payload = {"models": models}
     _write_json(ANALYTICS_DIR / "fraud_models.json", payload)
     return payload
@@ -120,11 +129,13 @@ def export_cluster_eda(cluster_path: str | Path) -> dict:
         for low, high, label in income_bins:
             mask = (df["Income"] >= low) & (df["Income"] < high)
             count = int(mask.sum())
-            income_distribution.append({
-                "range": label,
-                "count": count,
-                "pct": round(100 * count / total, 1) if total else 0,
-            })
+            income_distribution.append(
+                {
+                    "range": label,
+                    "count": count,
+                    "pct": round(100 * count / total, 1) if total else 0,
+                }
+            )
 
     spend_cols = [c for c in df.columns if c.startswith("Mnt")]
     spending_by_channel = [
@@ -140,11 +151,13 @@ def export_cluster_eda(cluster_path: str | Path) -> dict:
     if "Response" in df.columns:
         counts = df["Response"].value_counts()
         for label, count in counts.items():
-            campaign_response.append({
-                "label": str(label),
-                "count": int(count),
-                "pct": round(100 * count / total, 1) if total else 0,
-            })
+            campaign_response.append(
+                {
+                    "label": str(label),
+                    "count": int(count),
+                    "pct": round(100 * count / total, 1) if total else 0,
+                }
+            )
 
     payload = {
         "total_customers": total,
@@ -215,18 +228,18 @@ def export_cluster_summary(
     for idx in indices:
         cid = int(labels[idx])
         profile = cluster_labels.get(cid, f"Cluster {cid}")
-        points.append({
-            "x": round(float(coords[idx, 0]), 2),
-            "y": round(float(coords[idx, 1]), 2),
-            "cluster": profile,
-            "cluster_id": cid,
-        })
+        points.append(
+            {
+                "x": round(float(coords[idx, 0]), 2),
+                "y": round(float(coords[idx, 1]), 2),
+                "cluster": profile,
+                "cluster_id": cid,
+            }
+        )
 
     payload = {
         "points": points,
-        "explained_variance": [
-            round(float(v) * 100, 1) for v in pca.explained_variance_ratio_
-        ],
+        "explained_variance": [round(float(v) * 100, 1) for v in pca.explained_variance_ratio_],
     }
     _write_json(ANALYTICS_DIR / "cluster_summary.json", payload)
     return payload

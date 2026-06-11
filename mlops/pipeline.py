@@ -66,15 +66,11 @@ def run_pipeline(
 
     if task in ("fraud", "all"):
         validate_schema(fraud_path, FRAUD_REQUIRED_COLUMNS, "fraude")
-        results["fraud"] = train_fraud_model(
-            fraud_path, models_dir, log_mlflow=log_mlflow
-        )
+        results["fraud"] = train_fraud_model(fraud_path, models_dir, log_mlflow=log_mlflow)
 
     if task in ("cluster", "all"):
         validate_schema(cluster_path, CLUSTER_REQUIRED_COLUMNS, "clustering")
-        results["cluster"] = train_cluster_model(
-            cluster_path, models_dir, log_mlflow=log_mlflow
-        )
+        results["cluster"] = train_cluster_model(cluster_path, models_dir, log_mlflow=log_mlflow)
 
     if task == "all":
         metadata_path = models_dir / "metadata.json"
@@ -111,9 +107,7 @@ def main() -> None:
         type=Path,
         default=ROOT / "models",
     )
-    parser.add_argument(
-        "--no-mlflow", action="store_true", help="Désactiver le logging MLflow"
-    )
+    parser.add_argument("--no-mlflow", action="store_true", help="Désactiver le logging MLflow")
     args = parser.parse_args()
 
     if args.task == "all":

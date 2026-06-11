@@ -1,3 +1,4 @@
+# flake8: noqa: E501
 """Configuration des pages du dashboard et chemins des artefacts."""
 
 from __future__ import annotations
@@ -194,10 +195,26 @@ PAGES = [
         ],
         "figures": [
             ("ex2_distributions.png", "Distributions", "Revenus, âge, dépenses"),
-            ("ex2_correlation.png", "Matrice de corrélation", "Liens entre variables numériques"),
-            ("ex2_categorical.png", "Variables catégorielles", "Éducation, statut marital, canaux"),
-            ("ex2_spending_channels.png", "Canaux de dépense", "Répartition MntWines, MntMeat…"),
-            ("ex2_campaign_response.png", "Réponse campagnes", "Acceptation des promotions"),
+            (
+                "ex2_correlation.png",
+                "Matrice de corrélation",
+                "Liens entre variables numériques",
+            ),
+            (
+                "ex2_categorical.png",
+                "Variables catégorielles",
+                "Éducation, statut marital, canaux",
+            ),
+            (
+                "ex2_spending_channels.png",
+                "Canaux de dépense",
+                "Répartition MntWines, MntMeat…",
+            ),
+            (
+                "ex2_campaign_response.png",
+                "Réponse campagnes",
+                "Acceptation des promotions",
+            ),
         ],
     },
     {
@@ -235,7 +252,11 @@ PAGES = [
             ("ex2_kmeans_selection.png", "Sélection de k", "Silhouette & Elbow"),
             ("ex2_pca_scree.png", "Scree plot PCA", "Variance expliquée"),
             ("ex2_dendrogram.png", "Dendrogramme", "Clustering hiérarchique"),
-            ("ex2_clustering_comparison.png", "Comparaison algorithmes", "K-Means vs DBSCAN vs GMM"),
+            (
+                "ex2_clustering_comparison.png",
+                "Comparaison algorithmes",
+                "K-Means vs DBSCAN vs GMM",
+            ),
         ],
         "metadata_key": "cluster",
     },
@@ -253,8 +274,16 @@ PAGES = [
             "NumWebPurchases et Recency caractérisent le cluster Digital (engagement canal web).",
         ],
         "figures": [
-            ("ex2_cluster_profiles.png", "Profils par cluster", "Centroïdes normalisés"),
-            ("ex2_radar_profiles.png", "Radar des profils", "Comparaison multi-dimensions"),
+            (
+                "ex2_cluster_profiles.png",
+                "Profils par cluster",
+                "Centroïdes normalisés",
+            ),
+            (
+                "ex2_radar_profiles.png",
+                "Radar des profils",
+                "Comparaison multi-dimensions",
+            ),
         ],
         "metadata_key": "cluster",
     },
@@ -273,8 +302,16 @@ PAGES = [
             "Synthèse : k=2 offre un compromis lisible pour les équipes marketing tout en restant actionnable.",
         ],
         "figures": [
-            ("ex2_cluster_profiles.png", "Profils par cluster", "Centroïdes normalisés"),
-            ("ex2_radar_profiles.png", "Radar des profils", "Comparaison multi-dimensions"),
+            (
+                "ex2_cluster_profiles.png",
+                "Profils par cluster",
+                "Centroïdes normalisés",
+            ),
+            (
+                "ex2_radar_profiles.png",
+                "Radar des profils",
+                "Comparaison multi-dimensions",
+            ),
         ],
         "metadata_key": "cluster",
     },
@@ -292,7 +329,11 @@ PAGES = [
             "Simulation PSI (Population Stability Index) pour détecter la dérive.",
         ],
         "figures": [
-            ("mlops_monitoring.png", "Monitoring & dérive", "Distribution des scores et PSI"),
+            (
+                "mlops_monitoring.png",
+                "Monitoring & dérive",
+                "Distribution des scores et PSI",
+            ),
         ],
     },
     {

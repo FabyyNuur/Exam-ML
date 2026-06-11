@@ -1,5 +1,14 @@
 """Constantes partagées entre entraînement et API."""
 
+COLORS = {
+    "primary": "#4682B4",
+    "secondary": "#EF4444",
+    "accent": "#FF7F50",
+    "neutral": "#64748B",
+    "success": "#2E8B57",
+    "warning": "#F59E0B",
+}
+
 TYPE_MAP = {
     "PAYMENT": 0,
     "TRANSFER": 1,
@@ -37,8 +46,8 @@ CLUSTER_API_COLUMNS = [
 ]
 
 DEFAULT_CLUSTER_LABELS = {
-    0: "Premium",
-    1: "Digital",
+    0: "Digital",
+    1: "Premium",
     2: "Promo-sensible",
     3: "Dormant",
 }

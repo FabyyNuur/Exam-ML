@@ -6,28 +6,31 @@ import json
 from pathlib import Path
 from typing import Callable
 
-import joblib
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy.cluster.hierarchy import linkage
-from sklearn.cluster import AgglomerativeClustering, DBSCAN, KMeans
+from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import davies_bouldin_score, silhouette_score
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-from src.constants import CLUSTER_API_COLUMNS
-from src.preprocessing import clean_customer_data, engineer_customer_features, load_cluster_data
-from src.training import prepare_cluster_matrix
 from src.charts.sampling import (
     PLOTLY_SAMPLE_CLUSTER,
     PLOTLY_SAMPLE_DENDRO,
     PLOTLY_SAMPLE_HIST,
     sample_df,
 )
+from src.constants import CLUSTER_API_COLUMNS
+from src.preprocessing import (
+    clean_customer_data,
+    engineer_customer_features,
+    load_cluster_data,
+)
+from src.training import prepare_cluster_matrix
 from src.utils import COLORS, plot_silhouette
 
 RANDOM_STATE = 42
@@ -87,13 +90,23 @@ def _cluster_context(cluster_path: str | Path, models_dir: str | Path) -> dict:
 def build_distributions(cluster_path: str | Path, models_dir: str | Path) -> go.Figure:
     ctx = _cluster_context(cluster_path, models_dir)
     df = sample_df(ctx["df_clean"], PLOTLY_SAMPLE_DISTRIBUTIONS, random_state=RANDOM_STATE)
-    key_vars = ["Income", "Age" if "Age" in df.columns else "Year_Birth",
-                "MntWines", "MntMeatProducts", "NumWebPurchases", "NumStorePurchases"]
+    key_vars = [
+        "Income",
+        "Age" if "Age" in df.columns else "Year_Birth",
+        "MntWines",
+        "MntMeatProducts",
+        "NumWebPurchases",
+        "NumStorePurchases",
+    ]
     key_vars = [v for v in key_vars if v in df.columns][:6]
     fig = make_subplots(rows=2, cols=3, subplot_titles=key_vars)
     for i, var in enumerate(key_vars):
         row, col = i // 3 + 1, i % 3 + 1
-        fig.add_trace(go.Histogram(x=df[var], marker_color=COLORS["primary"], name=var, showlegend=False), row=row, col=col)
+        fig.add_trace(
+            go.Histogram(x=df[var], marker_color=COLORS["primary"], name=var, showlegend=False),
+            row=row,
+            col=col,
+        )
     fig.update_layout(title_text="Distribution des variables principales", height=650, width=1100)
     return fig
 
@@ -106,8 +119,14 @@ def build_categorical(cluster_path: str | Path, models_dir: str | Path) -> go.Fi
     for i, var in enumerate(cat_vars):
         counts = df[var].value_counts()
         fig.add_trace(
-            go.Bar(x=counts.index.astype(str), y=counts.values, marker_color=COLORS["primary"], showlegend=False),
-            row=1, col=i + 1,
+            go.Bar(
+                x=counts.index.astype(str),
+                y=counts.values,
+                marker_color=COLORS["primary"],
+                showlegend=False,
+            ),
+            row=1,
+            col=i + 1,
         )
     fig.update_layout(height=450, width=1000)
     return fig
@@ -120,9 +139,31 @@ def build_spending_channels(cluster_path: str | Path, models_dir: str | Path) ->
     channel_cols = [c for c in df.columns if "Purchases" in c]
     spend_mean = df[spend_cols].mean().sort_values()
     channel_mean = df[channel_cols].mean().sort_values()
-    fig = make_subplots(rows=1, cols=2, subplot_titles=["Dépenses moyennes par catégorie", "Achats moyens par canal"])
-    fig.add_trace(go.Bar(x=spend_mean.values, y=spend_mean.index, orientation="h", marker_color=COLORS["primary"]), row=1, col=1)
-    fig.add_trace(go.Bar(x=channel_mean.values, y=channel_mean.index, orientation="h", marker_color=COLORS["accent"]), row=1, col=2)
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=["Dépenses moyennes par catégorie", "Achats moyens par canal"],
+    )
+    fig.add_trace(
+        go.Bar(
+            x=spend_mean.values,
+            y=spend_mean.index,
+            orientation="h",
+            marker_color=COLORS["primary"],
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_trace(
+        go.Bar(
+            x=channel_mean.values,
+            y=channel_mean.index,
+            orientation="h",
+            marker_color=COLORS["accent"],
+        ),
+        row=1,
+        col=2,
+    )
     fig.update_layout(height=450, width=1000)
     return fig
 
@@ -134,10 +175,17 @@ def build_correlation(cluster_path: str | Path, models_dir: str | Path) -> go.Fi
     corr_matrix = df_clean[num_cols].corr()
     mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
     corr_masked = corr_matrix.mask(mask)
-    fig = go.Figure(go.Heatmap(
-        z=corr_masked.values, x=corr_masked.columns.astype(str), y=corr_masked.columns.astype(str),
-        colorscale="RdBu", zmid=0, zmin=-1, zmax=1,
-    ))
+    fig = go.Figure(
+        go.Heatmap(
+            z=corr_masked.values,
+            x=corr_masked.columns.astype(str),
+            y=corr_masked.columns.astype(str),
+            colorscale="RdBu",
+            zmid=0,
+            zmin=-1,
+            zmax=1,
+        )
+    )
     fig.update_layout(title="Matrice de corrélation", height=800, width=1000)
     return fig
 
@@ -150,8 +198,27 @@ def build_pca_scree(cluster_path: str | Path, models_dir: str | Path) -> go.Figu
     components = list(range(1, len(pca_all.explained_variance_ratio_) + 1))
     cumvar = np.cumsum(pca_all.explained_variance_ratio_)
     fig = make_subplots(rows=1, cols=2, subplot_titles=["Scree Plot", "Variance cumulative"])
-    fig.add_trace(go.Scatter(x=components, y=pca_all.explained_variance_ratio_, mode="lines+markers", name="Variance"), row=1, col=1)
-    fig.add_trace(go.Scatter(x=components, y=cumvar, mode="lines+markers", name="Cumul", line_color=COLORS["accent"]), row=1, col=2)
+    fig.add_trace(
+        go.Scatter(
+            x=components,
+            y=pca_all.explained_variance_ratio_,
+            mode="lines+markers",
+            name="Variance",
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=components,
+            y=cumvar,
+            mode="lines+markers",
+            name="Cumul",
+            line_color=COLORS["accent"],
+        ),
+        row=1,
+        col=2,
+    )
     fig.add_hline(y=0.95, line_dash="dash", line_color="gray", annotation_text="95%", row=1, col=2)
     fig.update_xaxes(title_text="Composante")
     fig.update_yaxes(title_text="Variance expliquée", row=1, col=1)
@@ -171,9 +238,17 @@ def build_kmeans_selection(cluster_path: str | Path, models_dir: str | Path) -> 
         silhouette_scores.append(silhouette_score(X_pca_full, labels))
         db_scores.append(davies_bouldin_score(X_pca_full, labels))
     fig = make_subplots(rows=1, cols=3, subplot_titles=["Elbow", "Silhouette", "Davies-Bouldin"])
-    fig.add_trace(go.Scatter(x=k_range, y=inertias, mode="lines+markers", line_color=COLORS["primary"]), row=1, col=1)
+    fig.add_trace(
+        go.Scatter(x=k_range, y=inertias, mode="lines+markers", line_color=COLORS["primary"]),
+        row=1,
+        col=1,
+    )
     plot_silhouette(silhouette_scores, k_range, fig=fig, row=1, col=2)
-    fig.add_trace(go.Scatter(x=k_range, y=db_scores, mode="lines+markers", line_color=COLORS["accent"]), row=1, col=3)
+    fig.add_trace(
+        go.Scatter(x=k_range, y=db_scores, mode="lines+markers", line_color=COLORS["accent"]),
+        row=1,
+        col=3,
+    )
     fig.update_layout(height=450, width=1200)
     return fig
 
@@ -188,9 +263,13 @@ def build_clustering_comparison(cluster_path: str | Path, models_dir: str | Path
     X_pca = ctx["X_pca"][idx]
     best_k = ctx["best_k"]
 
-    kmeans_labels = KMeans(n_clusters=best_k, random_state=RANDOM_STATE, n_init=10).fit_predict(X_scaled)
+    kmeans_labels = KMeans(n_clusters=best_k, random_state=RANDOM_STATE, n_init=10).fit_predict(
+        X_scaled
+    )
     agglo_labels = AgglomerativeClustering(n_clusters=best_k).fit_predict(X_scaled)
-    gmm_labels = GaussianMixture(n_components=best_k, random_state=RANDOM_STATE).fit_predict(X_scaled)
+    gmm_labels = GaussianMixture(n_components=best_k, random_state=RANDOM_STATE).fit_predict(
+        X_scaled
+    )
     dbscan_labels = DBSCAN(eps=0.8, min_samples=5).fit_predict(X_scaled)
 
     algo_results = [
@@ -208,11 +287,15 @@ def build_clustering_comparison(cluster_path: str | Path, models_dir: str | Path
         marker_colors = [color_map[label] for label in labels]
         fig.add_trace(
             go.Scatter(
-                x=X_pca[:, 0], y=X_pca[:, 1], mode="markers",
+                x=X_pca[:, 0],
+                y=X_pca[:, 1],
+                mode="markers",
                 marker=dict(color=marker_colors, size=5, opacity=0.6),
-                name=title, showlegend=False,
+                name=title,
+                showlegend=False,
             ),
-            row=row, col=col,
+            row=row,
+            col=col,
         )
         fig.update_xaxes(title_text="PC1", row=row, col=col)
         fig.update_yaxes(title_text="PC2", row=row, col=col)
@@ -226,14 +309,21 @@ def build_dendrogram(cluster_path: str | Path, models_dir: str | Path) -> go.Fig
     ctx = _cluster_context(cluster_path, models_dir)
     X_pca_full = ctx["X_pca_full"]
     rng = np.random.RandomState(RANDOM_STATE)
-    sample_idx = rng.choice(len(X_pca_full), min(PLOTLY_SAMPLE_DENDRO, len(X_pca_full)), replace=False)
+    sample_idx = rng.choice(
+        len(X_pca_full), min(PLOTLY_SAMPLE_DENDRO, len(X_pca_full)), replace=False
+    )
     fig = create_dendrogram(
-        X_pca_full[sample_idx], linkagefun=lambda x: linkage(x, method="ward"),
-        orientation="bottom", labels=None,
+        X_pca_full[sample_idx],
+        linkagefun=lambda x: linkage(x, method="ward"),
+        orientation="bottom",
+        labels=None,
     )
     fig.update_layout(
         title="Dendrogramme (échantillon 300 clients)",
-        xaxis_title="Clients", yaxis_title="Distance Ward", height=500, width=1200,
+        xaxis_title="Clients",
+        yaxis_title="Distance Ward",
+        height=500,
+        width=1200,
     )
     return fig
 
@@ -246,15 +336,22 @@ def build_cluster_profiles(cluster_path: str | Path, models_dir: str | Path) -> 
         index=cluster_profiles.index,
         columns=cluster_profiles.columns,
     )
-    fig = go.Figure(go.Heatmap(
-        z=profile_norm.T.values,
-        x=[str(c) for c in profile_norm.index],
-        y=profile_norm.columns.astype(str),
-        colorscale="YlOrRd",
-        text=cluster_profiles.T.round(0).astype(int).values,
-        texttemplate="%{text}",
-    ))
-    fig.update_layout(title="Profils clients par cluster (normalisés)", xaxis_title="Cluster", height=500, width=1100)
+    fig = go.Figure(
+        go.Heatmap(
+            z=profile_norm.T.values,
+            x=[str(c) for c in profile_norm.index],
+            y=profile_norm.columns.astype(str),
+            colorscale="YlOrRd",
+            text=cluster_profiles.T.round(0).astype(int).values,
+            texttemplate="%{text}",
+        )
+    )
+    fig.update_layout(
+        title="Profils clients par cluster (normalisés)",
+        xaxis_title="Cluster",
+        height=500,
+        width=1100,
+    )
     return fig
 
 
@@ -263,8 +360,18 @@ def build_radar_profiles(cluster_path: str | Path, models_dir: str | Path) -> go
     cluster_profiles = ctx["cluster_profiles"]
     cluster_names = ctx["cluster_names"]
     best_k = ctx["best_k"]
-    radar_cols = [c for c in ["Income", "TotalSpend", "NumWebPurchases", "NumStorePurchases",
-                              "Recency", "Children"] if c in cluster_profiles.columns]
+    radar_cols = [
+        c
+        for c in [
+            "Income",
+            "TotalSpend",
+            "NumWebPurchases",
+            "NumStorePurchases",
+            "Recency",
+            "Children",
+        ]
+        if c in cluster_profiles.columns
+    ]
     if not radar_cols:
         radar_cols = list(cluster_profiles.columns[:6])
     norm_profiles = MinMaxScaler().fit_transform(cluster_profiles[radar_cols])
@@ -275,14 +382,20 @@ def build_radar_profiles(cluster_path: str | Path, models_dir: str | Path) -> go
         values = row.tolist() + [row[0]]
         theta = radar_cols + [radar_cols[0]]
         name = cluster_names.get(i, f"Cluster {i}")
-        fig.add_trace(go.Scatterpolar(
-            r=values, theta=theta, fill="toself", name=name,
-            line_color=palette[i % len(palette)],
-        ))
+        fig.add_trace(
+            go.Scatterpolar(
+                r=values,
+                theta=theta,
+                fill="toself",
+                name=name,
+                line_color=palette[i % len(palette)],
+            )
+        )
     fig.update_layout(
         title="Radar — Profils clients",
         polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
-        height=500, width=1000,
+        height=500,
+        width=1000,
     )
     return fig
 
@@ -298,18 +411,26 @@ def build_campaign_response(cluster_path: str | Path, models_dir: str | Path) ->
     df_result = df_result.copy()
     df_result["CampaignResponse"] = df_result[cmp_cols].sum(axis=1)
     campaign_by_cluster = df_result.groupby("Cluster")["CampaignResponse"].mean()
-    fig = go.Figure(go.Bar(
-        x=campaign_by_cluster.index.astype(str), y=campaign_by_cluster.values,
-        marker_color=COLORS["primary"],
-    ))
+    fig = go.Figure(
+        go.Bar(
+            x=campaign_by_cluster.index.astype(str),
+            y=campaign_by_cluster.values,
+            marker_color=COLORS["primary"],
+        )
+    )
     fig.update_layout(
         title="Réponse moyenne aux campagnes marketing par cluster",
-        xaxis_title="Cluster", yaxis_title="Taux de réponse moyen", height=450, width=900,
+        xaxis_title="Cluster",
+        yaxis_title="Taux de réponse moyen",
+        height=450,
+        width=900,
     )
     return fig
 
 
-def all_charts(cluster_path: str | Path, models_dir: str | Path) -> dict[str, Callable[[], go.Figure]]:
+def all_charts(
+    cluster_path: str | Path, models_dir: str | Path
+) -> dict[str, Callable[[], go.Figure]]:
     path, models = Path(cluster_path), Path(models_dir)
     return {
         "ex2_distributions": lambda: build_distributions(path, models),

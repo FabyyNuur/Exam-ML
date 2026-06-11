@@ -27,7 +27,9 @@ def sample_df(df: pd.DataFrame, n: int, random_state: int = DEFAULT_RANDOM_STATE
     return df.sample(n=n, random_state=random_state)
 
 
-def subsample_curve(x, y, max_points: int = PLOTLY_SAMPLE_ROC_POINTS) -> tuple[np.ndarray, np.ndarray]:
+def subsample_curve(
+    x, y, max_points: int = PLOTLY_SAMPLE_ROC_POINTS
+) -> tuple[np.ndarray, np.ndarray]:
     x_arr = np.asarray(x)
     y_arr = np.asarray(y)
     if len(x_arr) <= max_points:

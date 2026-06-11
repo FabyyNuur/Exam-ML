@@ -19,16 +19,10 @@ def engineer_fraud_features(df: pd.DataFrame) -> pd.DataFrame:
     """Feature engineering spécifique aux transactions financières."""
     df = df.copy()
     # Erreur de solde émetteur / destinataire
-    df["error_balance_orig"] = df["newbalanceOrig"] - (
-        df["oldbalanceOrg"] - df["amount"]
-    )
-    df["error_balance_dest"] = df["newbalanceDest"] - (
-        df["oldbalanceDest"] + df["amount"]
-    )
+    df["error_balance_orig"] = df["newbalanceOrig"] - (df["oldbalanceOrg"] - df["amount"])
+    df["error_balance_dest"] = df["newbalanceDest"] - (df["oldbalanceDest"] + df["amount"])
     # Indicateur de compte vidé
-    df["orig_zeroed"] = (
-        (df["oldbalanceOrg"] > 0) & (df["newbalanceOrig"] == 0)
-    ).astype(int)
+    df["orig_zeroed"] = ((df["oldbalanceOrg"] > 0) & (df["newbalanceOrig"] == 0)).astype(int)
     return df
 
 

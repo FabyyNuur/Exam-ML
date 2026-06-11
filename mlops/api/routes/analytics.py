@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 
@@ -73,6 +72,9 @@ def get_chart(chart_id: str):
     if not path.exists():
         raise HTTPException(
             status_code=404,
-            detail=f"Chart Plotly introuvable : {chart_id}. Exécuter le pipeline ou scripts/export_analytics.py.",
+            detail=(
+                f"Chart Plotly introuvable : {chart_id}. "
+                "Exécuter le pipeline ou scripts/export_analytics.py."
+            ),
         )
     return json.loads(path.read_text(encoding="utf-8"))

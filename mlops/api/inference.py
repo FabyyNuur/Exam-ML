@@ -10,7 +10,12 @@ from typing import Any
 import joblib
 import pandas as pd
 
-from mlops.api.schemas import CustomerRequest, CustomerResponse, FraudRequest, FraudResponse
+from mlops.api.schemas import (
+    CustomerRequest,
+    CustomerResponse,
+    FraudRequest,
+    FraudResponse,
+)
 from src.constants import (
     CLUSTER_API_COLUMNS,
     CLUSTER_PROFILE_DESCRIPTIONS,
