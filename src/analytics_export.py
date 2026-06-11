@@ -156,9 +156,29 @@ def export_fraud_models(cv_results: dict) -> dict:
     return payload
 
 
-def export_cluster_eda(cluster_path: str | Path) -> dict:
-    """Calcule les stats EDA segmentation pour Recharts."""
-    df = load_cluster_data(str(cluster_path))
+def _cluster_labels_from_metadata(models_dir: Path) -> tuple[int, dict[int, str]]:
+    """Charge k optimal et libellés clusters depuis metadata.json."""
+    metadata_path = models_dir / "metadata.json"
+    best_k = 2
+    cluster_labels: dict[int, str] = {0: "Digital", 1: "Premium"}
+    if metadata_path.exists():
+        meta = json.loads(metadata_path.read_text(encoding="utf-8"))
+        cluster_meta = meta.get("cluster", {})
+        best_k = int(cluster_meta.get("best_k", 2))
+        raw = cluster_meta.get("cluster_labels", cluster_labels)
+        cluster_labels = {int(k): v for k, v in raw.items()}
+    return best_k, cluster_labels
+
+
+def export_cluster_eda(
+    cluster_path: str | Path,
+    models_dir: str | Path | None = None,
+) -> dict:
+    """Calcule les stats EDA segmentation pour Recharts + explorateur interactif."""
+    models_path = Path(models_dir) if models_dir else ROOT / "models"
+    df_raw = load_cluster_data(str(cluster_path))
+    df_clean = clean_customer_data(df_raw)
+    df = engineer_customer_features(df_clean)
     total = len(df)
 
     income_bins = [
@@ -204,11 +224,74 @@ def export_cluster_eda(cluster_path: str | Path) -> dict:
                 }
             )
 
+    best_k, cluster_labels = _cluster_labels_from_metadata(models_path)
+    X_df = _prepare_cluster_matrix(df_raw)
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_df)
+    km = KMeans(n_clusters=best_k, random_state=42, n_init=10)
+    cluster_ids = km.fit_predict(X_scaled)
+
+    spend_key_map = {
+        "MntWines": "wines",
+        "MntFruits": "fruits",
+        "MntMeatProducts": "meat",
+        "MntFishProducts": "fish",
+        "MntSweetProducts": "sweet",
+        "MntGoldProds": "gold",
+    }
+    records = []
+    for idx in range(len(df)):
+        row = df.iloc[idx]
+        rec: dict = {
+            "age": int(row["Age"]) if "Age" in row else 0,
+            "income": round(float(row["Income"]), 0),
+            "total_spend": round(float(row.get("TotalSpend", 0)), 0),
+            "children": int(row.get("Children", 0)),
+            "recency": int(row.get("Recency", 0)),
+            "web_purchases": int(row.get("NumWebPurchases", 0)),
+            "store_purchases": int(row.get("NumStorePurchases", 0)),
+            "response": int(row["Response"]) if "Response" in row else 0,
+            "education": str(row.get("Education", "Inconnu")),
+            "marital_status": str(row.get("Marital_Status", "Inconnu")),
+            "cluster": cluster_labels.get(int(cluster_ids[idx]), f"Cluster {cluster_ids[idx]}"),
+        }
+        for col, key in spend_key_map.items():
+            if col in row:
+                rec[key] = round(float(row[col]), 0)
+        records.append(rec)
+
+    educations = sorted({r["education"] for r in records if r["education"]})
+    marital = sorted({r["marital_status"] for r in records if r["marital_status"]})
+    clusters = sorted({r["cluster"] for r in records})
+
     payload = {
         "total_customers": total,
         "income_distribution": income_distribution,
         "spending_by_channel": spending_by_channel,
         "campaign_response": campaign_response,
+        "records": records,
+        "numeric_variables": [
+            {"key": "age", "label": "Âge"},
+            {"key": "income", "label": "Revenu (€)"},
+            {"key": "total_spend", "label": "Dépenses totales (€)"},
+            {"key": "recency", "label": "Récence (jours)"},
+            {"key": "web_purchases", "label": "Achats web"},
+            {"key": "store_purchases", "label": "Achats magasin"},
+            {"key": "children", "label": "Enfants"},
+            {"key": "wines", "label": "Dépenses vins (€)"},
+            {"key": "meat", "label": "Dépenses viandes (€)"},
+            {"key": "fish", "label": "Dépenses poissons (€)"},
+        ],
+        "filters": {
+            "education": educations,
+            "marital_status": marital,
+            "clusters": clusters,
+            "response": [
+                {"value": "all", "label": "Toutes réponses"},
+                {"value": "1", "label": "Accepté campagne"},
+                {"value": "0", "label": "Refusé campagne"},
+            ],
+        },
     }
     _write_json(ANALYTICS_DIR / "cluster_eda.json", payload)
     return payload
@@ -311,7 +394,7 @@ def export_all_analytics(
         export_fraud_smote()
 
     if cluster_path.is_file():
-        export_cluster_eda(cluster_path)
+        export_cluster_eda(cluster_path, models_dir=ROOT / "models")
         export_cluster_k_selection(cluster_path)
         if cluster_labels is not None:
             export_cluster_summary(cluster_path, cluster_labels, best_k)

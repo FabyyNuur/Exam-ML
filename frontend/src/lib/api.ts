@@ -96,11 +96,39 @@ export interface ClusterSummary {
   };
 }
 
+export interface ClusterEdaRecord {
+  age: number;
+  income: number;
+  total_spend: number;
+  children: number;
+  recency: number;
+  web_purchases: number;
+  store_purchases: number;
+  response: number;
+  education: string;
+  marital_status: string;
+  cluster: string;
+  wines?: number;
+  fruits?: number;
+  meat?: number;
+  fish?: number;
+  sweet?: number;
+  gold?: number;
+}
+
 export interface ClusterEdaAnalytics {
   total_customers: number;
   income_distribution: { range: string; count: number; pct: number }[];
   spending_by_channel: { channel: string; total: number; avg: number }[];
   campaign_response: { label: string; count: number; pct: number }[];
+  records?: ClusterEdaRecord[];
+  numeric_variables?: { key: string; label: string }[];
+  filters?: {
+    education: string[];
+    marital_status: string[];
+    clusters: string[];
+    response: { value: string; label: string }[];
+  };
 }
 
 export interface ClusterKSelection {

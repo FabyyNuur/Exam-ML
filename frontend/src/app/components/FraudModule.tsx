@@ -249,7 +249,7 @@ export function FraudModule() {
                 variant="red"
               />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
                 <div className="flex flex-col gap-3">
                   <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                     <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">

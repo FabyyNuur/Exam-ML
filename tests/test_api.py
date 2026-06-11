@@ -138,6 +138,9 @@ def test_analytics_cluster_eda(client):
     assert "income_distribution" in data
     assert "spending_by_channel" in data
     assert "campaign_response" in data
+    if data.get("records"):
+        assert isinstance(data["records"], list)
+        assert "numeric_variables" in data
 
 
 def test_analytics_cluster_k_selection(client):

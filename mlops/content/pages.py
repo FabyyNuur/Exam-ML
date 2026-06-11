@@ -209,33 +209,53 @@ PAGES = [
         "title": "Exploration des clients",
         "subtitle": "Analyse exploratoire — data_cluster.csv (~2 200 clients)",
         "insights": [
-            "Dataset : ~2 200 clients, variables démographiques (âge, revenu, enfants), comportementales (achats web/magasin, récence) et marketing (campagnes, réponse).",
-            "Outliers sur Income (> 600 000 €) : clients atypiques à exclure avant clustering.",
-            "Modalités aberrantes Marital_Status (YOLO, Absurd) signalant des erreurs de saisie.",
-            "Corrélations fortes entre dépenses par catégorie (MntWines, MntMeat, MntFish…) : redondance à surveiller.",
-            "Réponse aux campagnes (Accept vs Reject) : base pour le ciblage marketing post-segmentation.",
+            "Le portefeuille compte environ 2 200 clients décrits par l'âge, le revenu, les dépenses par catégorie, la récence d'achat et l'historique de réponse aux campagnes — une richesse suffisante pour dépasser une segmentation purement démographique.",
+            "Les revenus extrêmes (> 600 000 €) et les modalités aberrantes du statut marital (YOLO, Absurd) signalent des données à nettoyer avant clustering, faute de quoi les centroïdes seraient tirés par quelques valeurs atypiques.",
+            "Les dépenses par catégorie (vins, viandes, poissons…) sont fortement corrélées entre elles : cette redondance confirme qu'un indice de dépense globale ou une PCA pourra résumer l'essentiel du comportement d'achat.",
+            "La réponse aux campagnes n'est pas uniforme — une part significative des clients refuse les promotions — ce qui pose directement la question du ciblage : à qui envoyer une offre, et à qui proposer plutôt de la fidélisation sans discount ?",
         ],
         "figures": [
-            ("ex2_distributions.png", "Distributions", "Revenus, âge, dépenses"),
+            (
+                "ex2_distributions.png",
+                "Distributions",
+                "Revenus, âge, dépenses",
+                "Les histogrammes révèlent des distributions asymétriques : revenus étalés sur une longue traîne, âges concentrés entre 40 et 60 ans, dépenses hétérogènes par catégorie. "
+                "Cette variabilité confirme qu'un decoupage en segments homogènes apportera plus de valeur qu'une stratégie marketing uniforme.",
+            ),
+            (
+                "ex2_interactive_explorer.png",
+                "Exploration interactive",
+                "Comparaisons revenu, âge, dépenses",
+                "Le menu déroulant permet de tester plusieurs hypothèses (revenu vs dépenses, âge vs revenu, web vs magasin) sans refaire les graphiques. "
+                "On observe notamment que les clients Premium se détachent sur le couple revenu–dépenses, tandis que le cluster Digital se distingue par les achats web.",
+            ),
             (
                 "ex2_correlation.png",
                 "Matrice de corrélation",
                 "Liens entre variables numériques",
+                "Les corrélations fortes entre MntWines, MntMeat, MntFish et TotalSpend indiquent une redondance : les clients qui dépensent beaucoup dans une catégorie tendent à dépenser davantage partout. "
+                "La standardisation avant K-Means est indispensable pour éviter que le revenu ou le montant total ne dominent seuls la distance euclidienne.",
             ),
             (
                 "ex2_categorical.png",
                 "Variables catégorielles",
                 "Éducation, statut marital, canaux",
+                "La répartition par niveau d'éducation et statut marital montre une diversité de profils sociodémographiques, mais ces seuls critères ne suffisent pas à expliquer les différences de dépenses — "
+                "d'où l'intérêt de croiser ces variables avec le comportement d'achat en clustering.",
             ),
             (
                 "ex2_spending_channels.png",
                 "Canaux de dépense",
                 "Répartition MntWines, MntMeat…",
+                "Certains clients concentrent leurs achats sur le web, d'autres en magasin, avec des montants moyens très différents par catégorie. "
+                "Ce graphique suggère que le canal dominant sera un axe discriminant aussi pertinent que le montant total pour distinguer un profil Digital d'un profil Premium.",
             ),
             (
                 "ex2_campaign_response.png",
                 "Réponse campagnes",
                 "Acceptation des promotions",
+                "Le déséquilibre entre acceptations et refus de campagnes montre qu'une partie de la base est peu sensible aux promotions classiques. "
+                "Segmenter avant d'envoyer une offre permet d'éviter de solliciter inutilement les clients réfractaires et de concentrer le budget sur les profils réceptifs.",
             ),
         ],
     },
@@ -247,12 +267,10 @@ PAGES = [
         "title": "Nettoyage & features dérivées",
         "subtitle": "Préparation des données pour le clustering",
         "insights": [
-            "[Nettoyage] Suppression des outliers Income (> 600 000 €) et correction Marital_Status (Alone → Single, YOLO/Absurd → NaN).",
-            "[Features] Age (2024 − Year_Birth), Children (Kidhome + Teenhome), TotalSpend (somme Mnt*), TotalPurchases (somme *Purchases).",
-            "[Imputation] Valeurs manquantes numériques remplacées par la médiane.",
-            "[Encodage] Variables catégorielles encodées (LabelEncoder) pour analyse exploratoire complémentaire.",
-            "[Standardisation] StandardScaler appliqué avant clustering — indispensable pour K-Means sur échelles hétérogènes.",
-            "[PCA] Réduction dimensionnelle explorée (scree plot) pour visualisation 2D sans perdre la structure.",
+            "Nous excluons les revenus supérieurs à 600 000 € et corrigeons les statuts maritaux aberrants, car la question n'est pas de conserver toutes les lignes mais de garantir que chaque observation reflète un client réel et actionnable.",
+            "Les variables dérivées (âge, nombre d'enfants, dépense totale, nombre d'achats) condensent le comportement en indicateurs interprétables par les équipes marketing, plutôt qu'en dizaines de colonnes brutes.",
+            "L'imputation par médiane et la standardisation (StandardScaler) sont nécessaires : sans elles, K-Means serait dominé par les variables à grande échelle (revenu, montants) et produirait des segments peu exploitables.",
+            "La PCA exploratoire permet de visualiser la structure en 2D sans imposer k à l'avance — elle répond à la question « voyons-nous déjà des groupes naturels avant de fixer le nombre de clusters ? »",
         ],
         "figures": [],
     },
@@ -264,20 +282,39 @@ PAGES = [
         "title": "Sélection de l'algorithme & k optimal",
         "subtitle": "K-Means, DBSCAN, Agglomerative, GMM",
         "insights": [
-            "Sélection de k (2–10) : critères Elbow (inertie), Silhouette (max ≈ 0,32 à k=2) et Davies-Bouldin (min).",
-            "Algorithmes comparés : K-Means, DBSCAN, Agglomerative Clustering, GMM (Gaussian Mixture).",
-            "K-Means retenu : interprétabilité des centroïdes, stabilité et coût calcul raisonnable.",
-            "k optimal = 2 : séparation nette Premium (revenus/dépenses élevés) vs Digital (achats web dominants).",
-            "Dendrogramme hiérarchique : confirme la structure à 2–3 groupes principaux.",
+            "La courbe du coude et le score de Silhouette (maximum ≈ 0,32 pour k=2) convergent vers un nombre restreint de segments — la question devient alors : préférons-nous plus de granularité (k élevé) ou des profils lisibles pour le marketing (k=2) ?",
+            "K-Means, DBSCAN, Agglomerative et GMM ont été comparés : DBSCAN produit trop de bruit sur ce jeu, tandis que K-Means offre des centroïdes directement interprétables par les équipes métier.",
+            "Avec k=2, nous obtenons une séparation nette entre un segment Premium (revenus et dépenses élevés) et un segment Digital (achats web dominants) — un découpage suffisant pour piloter des campagnes différenciées sans sur-complexifier l'organisation.",
+            "Le dendrogramme hiérarchique confirme que la structure principale se situe entre 2 et 3 groupes, ce qui valide le choix de k=2 comme compromis entre finesse et actionnabilité.",
         ],
         "figures": [
-            ("ex2_kmeans_selection.png", "Sélection de k", "Silhouette & Elbow"),
-            ("ex2_pca_scree.png", "Scree plot PCA", "Variance expliquée"),
-            ("ex2_dendrogram.png", "Dendrogramme", "Clustering hiérarchique"),
+            (
+                "ex2_kmeans_selection.png",
+                "Sélection de k",
+                "Silhouette & Elbow",
+                "Le coude d'inertie et le pic de Silhouette autour de k=2 indiquent que deux segments capturent l'essentiel de la variance comportementale. "
+                "Augmenter k améliore marginalement les métriques internes mais fragmente les groupes au point de les rendre difficiles à exploiter commercialement.",
+            ),
+            (
+                "ex2_pca_scree.png",
+                "Scree plot PCA",
+                "Variance expliquée",
+                "Les deux premières composantes principales concentrent l'essentiel de la variance : elles suffisent pour visualiser la séparation des clusters en 2D "
+                "sans reconstruire toutes les dimensions du portefeuille client.",
+            ),
+            (
+                "ex2_dendrogram.png",
+                "Dendrogramme",
+                "Clustering hiérarchique",
+                "Le dendrogramme montre une fusion progressive des observations : les premières scissions séparent clairement deux blocs principaux, "
+                "ce qui corrobore le choix de k=2 retenu par K-Means plutôt qu'un découpage en cinq ou six micro-segments.",
+            ),
             (
                 "ex2_clustering_comparison.png",
                 "Comparaison algorithmes",
                 "K-Means vs DBSCAN vs GMM",
+                "Sur la projection PCA, K-Means et GMM produisent des regroupements comparables, tandis que DBSCAN isole de nombreux points comme bruit. "
+                "Pour un usage marketing, la stabilité et la lisibilité des centroïdes K-Means priment sur la finesse théorique d'algorithmes plus complexes.",
             ),
         ],
         "metadata_key": "cluster",
@@ -290,21 +327,24 @@ PAGES = [
         "title": "Profils clients & recommandations",
         "subtitle": "Interprétation métier des clusters",
         "insights": [
-            "Silhouette ≈ 0,32 et Davies-Bouldin ≈ 1,29 : séparation acceptable pour un clustering marketing.",
-            "Variance PCA : les 2 premières composantes capturent l'essentiel de la structure pour la visualisation.",
-            "Centroïdes normalisés : Income et TotalSpend discriminent fortement le cluster Premium.",
-            "NumWebPurchases et Recency caractérisent le cluster Digital (engagement canal web).",
+            "Avec une Silhouette d'environ 0,32 et un Davies-Bouldin de 1,29, la séparation reste modeste au regard des standards académiques — mais elle est suffisante pour orienter des campagnes marketing, où l'enjeu est l'actionnabilité plutôt que la perfection statistique.",
+            "Les centroïdes normalisés montrent que le revenu et la dépense totale discriminent fortement le cluster Premium, tandis que le nombre d'achats web et la récence caractérisent le cluster Digital.",
+            "La lecture des profils invite à se demander, pour chaque segment, quel canal privilégier et quel type d'offre maximisera la conversion sans cannibaliser la marge.",
         ],
         "figures": [
             (
                 "ex2_cluster_profiles.png",
                 "Profils par cluster",
                 "Centroïdes normalisés",
+                "Les barres des centroïdes mettent en évidence des profils opposés : le cluster Premium surperforme sur Income et TotalSpend, "
+                "le cluster Digital sur NumWebPurchases et la récence. Ces écarts justifient des messages et des canaux distincts pour chaque segment.",
             ),
             (
                 "ex2_radar_profiles.png",
                 "Radar des profils",
                 "Comparaison multi-dimensions",
+                "Le radar confirme visuellement que les deux clusters ne diffèrent pas sur une seule variable mais sur un ensemble cohérent de dimensions — "
+                "revenu, dépenses, canal et récence — ce qui renforce la légitimité du découpage pour une stratégie marketing différenciée.",
             ),
         ],
         "metadata_key": "cluster",
@@ -317,22 +357,25 @@ PAGES = [
         "title": "Profils clients & recommandations business",
         "subtitle": "Actions marketing par segment — synthèse stratégique",
         "insights": [
-            "Premium : programme fidélité haut de gamme, offres exclusives, cross-sell produits premium.",
-            "Digital : campagnes e-mail et push, promotions ciblées sur le canal web, parcours mobile.",
-            "Personnaliser chaque campagne selon le profil cluster plutôt qu'un envoi massif.",
-            "Recalculer les segments mensuellement et suivre la Silhouette pour détecter une dérive comportementale.",
-            "Synthèse : k=2 offre un compromis lisible pour les équipes marketing tout en restant actionnable.",
+            "Le segment Premium mérite un programme de fidélité haut de gamme et du cross-sell sur les catégories à forte marge, plutôt que des promotions agressives qui risqueraient d'éroder la valeur perçue.",
+            "Le segment Digital répond mieux aux campagnes e-mail, push et offres limitées sur le canal web — la question clé est de maintenir l'engagement avant que la récence ne se dégrade.",
+            "Plutôt qu'un envoi massif, chaque campagne doit être calibrée sur le profil cluster : même budget, meilleur ciblage, moins de sollicitations inutiles.",
+            "En production, les segments devront être recalculés régulièrement et la Silhouette suivie dans le temps pour détecter une dérive comportementale avant qu'elle n'invalide les recommandations.",
         ],
         "figures": [
             (
                 "ex2_cluster_profiles.png",
                 "Profils par cluster",
                 "Centroïdes normalisés",
+                "Les centroïdes traduisent en langage métier ce que le modèle a appris : des clients à fort pouvoir d'achat d'un côté, des acheteurs digitaux actifs de l'autre. "
+                "Chaque barre est un levier d'action — revenu, dépense, canal — pour construire une offre cohérente avec le comportement observé.",
             ),
             (
                 "ex2_radar_profiles.png",
                 "Radar des profils",
                 "Comparaison multi-dimensions",
+                "Le radar synthétise l'écart entre profils sur l'ensemble des dimensions : il permet aux équipes marketing de valider en un coup d'œil "
+                "que les segments sont suffisamment distincts pour justifier des parcours clients différenciés.",
             ),
         ],
         "metadata_key": "cluster",

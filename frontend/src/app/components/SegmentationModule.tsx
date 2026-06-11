@@ -26,6 +26,7 @@ import { ApiStatusBadge } from "./ApiStatusBadge";
 import { ChartWithInterpretation } from "./ChartWithInterpretation";
 import { InsightsList } from "./InsightsList";
 import { MetricsCards } from "./MetricsCards";
+import { ClusterInteractiveExplorer } from "./ClusterInteractiveExplorer";
 import { PredictSegmentModal } from "./PredictSegmentModal";
 import {
   useClusterEda,
@@ -39,6 +40,7 @@ type Tab = "CONTEXT" | "EDA" | "PREPROCESSING" | "MODELING" | "INTERPRETATION";
 
 const PLOTLY_CHART_HEIGHTS: Record<string, number> = {
   "ex2_distributions.png": 480,
+  "ex2_interactive_explorer.png": 560,
   "ex2_correlation.png": 560,
   "ex2_categorical.png": 520,
   "ex2_spending_channels.png": 480,
@@ -53,6 +55,22 @@ const PLOTLY_CHART_HEIGHTS: Record<string, number> = {
 
 function plotlyHeight(filename: string): number {
   return PLOTLY_CHART_HEIGHTS[filename] ?? 480;
+}
+
+function InterpretationBlock({
+  text,
+  className = "",
+}: {
+  text: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`bg-indigo-50 border border-indigo-100 px-4 py-3 rounded-lg text-sm text-indigo-900 leading-relaxed ${className}`}
+    >
+      <strong>Interprétation :</strong> {text}
+    </div>
+  );
 }
 
 function FullWidthChartList({ figures }: { figures: PageFigure[] }) {
@@ -71,6 +89,27 @@ function FullWidthChartList({ figures }: { figures: PageFigure[] }) {
     </div>
   );
 }
+
+const MARKETING_CONTEXT = [
+  "Envoyer la même promotion à l'ensemble de la base revient à supposer que tous les clients réagissent de la même façon — or les revenus, les canaux d'achat et la sensibilité aux offres varient fortement d'un profil à l'autre.",
+  "La segmentation par clustering répond à une question centrale : quels groupes partagent un comportement comparable, et comment adapter le message, le canal et l'offre à chacun pour maximiser le retour sur investissement plutôt que diluer le budget en campagnes génériques ?",
+  "Nous croisons démographie, dépenses par catégorie, récence d'achat et historique de réponse aux campagnes, car ce sont ces signaux comportementaux — et non l'âge ou le revenu seuls — qui permettent de distinguer des segments réellement actionnables par les équipes marketing.",
+] as const;
+
+const RECHARTS_INTERPRETATIONS = {
+  incomeDistribution:
+    "La distribution des revenus est fortement asymétrique : la majorité des clients se concentre dans les tranches moyennes, tandis que quelques valeurs extrêmes (> 600 000 €) tirent la moyenne vers le haut. " +
+    "Avant tout clustering, la bonne question est de savoir si ces clients atypiques représentent un segment premium à préserver ou des erreurs de saisie à exclure — car ils fausseraient les centroïdes K-Means.",
+  spendingChannels:
+    "Les dépenses ne se répartissent pas uniformément entre vins, viandes, poissons ou produits d'épicerie : certains clients concentrent leurs achats sur une ou deux catégories. " +
+    "Cette hétérogénéité suggère que le canal dominant (web vs magasin) et la composition du panier sont de meilleurs leviers de segmentation qu'un montant total seul.",
+  campaignResponse:
+    "Le taux d'acceptation des campagnes n'est pas homogène : une part significative de clients refuse systématiquement les promotions. " +
+    "Plutôt que de relancer indistinctement toute la base, il convient d'identifier qui répond aux offres et qui nécessite une approche de réactivation ou de fidélisation sans discount.",
+  pcaProjection:
+    "La projection PCA en deux dimensions confirme une séparation nette entre les clusters : les points d'un même groupe se regroupent dans l'espace réduit sans recouvrement majeur. " +
+    "Si la Silhouette reste modérée (~0,32), cette visualisation valide que k=2 capture une structure réelle du portefeuille — et non un artefact du choix d'algorithme.",
+} as const;
 
 const CLUSTER_COLORS: Record<string, string> = {
   Premium: "#8b5cf6",
@@ -211,13 +250,11 @@ export function SegmentationModule() {
                   OBJECTIFS MARKETING
                 </h3>
                 <div className="text-slate-600 leading-relaxed space-y-4">
-                  <p>
-                    Identifier des profils clients homogènes pour personnaliser
-                    les campagnes marketing et optimiser le retour sur
-                    investissement des actions commerciales.
-                  </p>
-                  {contextPage?.insights.slice(0, 2).map((insight, i) => (
-                    <p key={i}>{insight}</p>
+                  {MARKETING_CONTEXT.map((paragraph, i) => (
+                    <p key={i}>{paragraph}</p>
+                  ))}
+                  {contextPage?.insights.map((insight, i) => (
+                    <p key={`insight-${i}`}>{insight}</p>
                   ))}
                 </div>
               </div>
@@ -245,108 +282,125 @@ export function SegmentationModule() {
                 insights={edaPage?.insights ?? []}
               />
 
+              <ClusterInteractiveExplorer data={clusterEda} />
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl">
-                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                  <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">
-                    Distribution des revenus
-                  </h3>
-                  {clusterEda?.income_distribution?.length ? (
-                    <ResponsiveContainer width="100%" height={220}>
-                      <BarChart data={clusterEda.income_distribution}>
+                <div className="flex flex-col gap-3">
+                  <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                    <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">
+                      Distribution des revenus
+                    </h3>
+                    {clusterEda?.income_distribution?.length ? (
+                      <ResponsiveContainer width="100%" height={220}>
+                        <BarChart data={clusterEda.income_distribution}>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#e2e8f0"
+                            vertical={false}
+                          />
+                          <XAxis
+                            dataKey="range"
+                            tick={{ fill: "#64748b", fontSize: 11 }}
+                          />
+                          <YAxis tick={{ fill: "#64748b", fontSize: 12 }} />
+                          <RechartsTooltip />
+                          <Bar
+                            dataKey="count"
+                            name="Clients"
+                            fill="#6366f1"
+                            radius={[4, 4, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="text-slate-400 text-sm">
+                        Analytics non disponibles — exécuter le pipeline.
+                      </p>
+                    )}
+                  </div>
+                  <InterpretationBlock
+                    text={RECHARTS_INTERPRETATIONS.incomeDistribution}
+                  />
+                </div>
+                <div className="flex flex-col gap-3">
+                  <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                    <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">
+                      Dépenses par canal
+                    </h3>
+                    {clusterEda?.spending_by_channel?.length ? (
+                      <ResponsiveContainer width="100%" height={220}>
+                        <BarChart
+                          data={clusterEda.spending_by_channel}
+                          layout="vertical"
+                          margin={{ left: 20 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#e2e8f0"
+                            horizontal={false}
+                          />
+                          <XAxis
+                            type="number"
+                            tick={{ fill: "#64748b", fontSize: 12 }}
+                          />
+                          <YAxis
+                            type="category"
+                            dataKey="channel"
+                            tick={{ fill: "#64748b", fontSize: 11 }}
+                            width={90}
+                          />
+                          <RechartsTooltip />
+                          <Bar
+                            dataKey="avg"
+                            name="Dépense moy."
+                            fill="#818cf8"
+                            radius={[0, 4, 4, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="text-slate-400 text-sm">
+                        Données non disponibles.
+                      </p>
+                    )}
+                  </div>
+                  <InterpretationBlock
+                    text={RECHARTS_INTERPRETATIONS.spendingChannels}
+                  />
+                </div>
+              </div>
+
+              {campaignData.length > 0 && (
+                <div className="flex flex-col gap-3 max-w-md">
+                  <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                    <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">
+                      Réponse aux campagnes
+                    </h3>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <BarChart data={campaignData}>
                         <CartesianGrid
                           strokeDasharray="3 3"
                           stroke="#e2e8f0"
                           vertical={false}
                         />
                         <XAxis
-                          dataKey="range"
-                          tick={{ fill: "#64748b", fontSize: 11 }}
+                          dataKey="label"
+                          tick={{ fill: "#64748b", fontSize: 12 }}
                         />
                         <YAxis tick={{ fill: "#64748b", fontSize: 12 }} />
                         <RechartsTooltip />
                         <Bar
                           dataKey="count"
                           name="Clients"
-                          fill="#6366f1"
+                          fill="#a78bfa"
                           radius={[4, 4, 0, 0]}
                         />
                       </BarChart>
                     </ResponsiveContainer>
-                  ) : (
-                    <p className="text-slate-400 text-sm">
-                      Analytics non disponibles — exécuter le pipeline.
-                    </p>
-                  )}
-                </div>
-                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                  <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">
-                    Dépenses par canal
-                  </h3>
-                  {clusterEda?.spending_by_channel?.length ? (
-                    <ResponsiveContainer width="100%" height={220}>
-                      <BarChart
-                        data={clusterEda.spending_by_channel}
-                        layout="vertical"
-                        margin={{ left: 20 }}
-                      >
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="#e2e8f0"
-                          horizontal={false}
-                        />
-                        <XAxis
-                          type="number"
-                          tick={{ fill: "#64748b", fontSize: 12 }}
-                        />
-                        <YAxis
-                          type="category"
-                          dataKey="channel"
-                          tick={{ fill: "#64748b", fontSize: 11 }}
-                          width={90}
-                        />
-                        <RechartsTooltip />
-                        <Bar
-                          dataKey="avg"
-                          name="Dépense moy."
-                          fill="#818cf8"
-                          radius={[0, 4, 4, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <p className="text-slate-400 text-sm">
-                      Données non disponibles.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {campaignData.length > 0 && (
-                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm max-w-md">
-                  <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">
-                    Réponse aux campagnes
-                  </h3>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart data={campaignData}>
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="#e2e8f0"
-                        vertical={false}
-                      />
-                      <XAxis
-                        dataKey="label"
-                        tick={{ fill: "#64748b", fontSize: 12 }}
-                      />
-                      <YAxis tick={{ fill: "#64748b", fontSize: 12 }} />
-                      <RechartsTooltip />
-                      <Bar
-                        dataKey="count"
-                        name="Clients"
-                        fill="#a78bfa"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  </div>
+                  <InterpretationBlock
+                    text={RECHARTS_INTERPRETATIONS.campaignResponse}
+                  />
                 </div>
               )}
 
@@ -419,50 +473,82 @@ export function SegmentationModule() {
               />
 
               {scatterByCluster.length > 0 && (
-                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                  <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">
-                    Projection PCA 2D — {clusterNames.join(" / ")}
-                  </h3>
-                  <ResponsiveContainer width="100%" height={320}>
-                    <ScatterChart
-                      margin={{ top: 10, right: 10, bottom: 10, left: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis
-                        type="number"
-                        dataKey="x"
-                        name="PC1"
-                        tick={{ fill: "#64748b", fontSize: 12 }}
-                      />
-                      <YAxis
-                        type="number"
-                        dataKey="y"
-                        name="PC2"
-                        tick={{ fill: "#64748b", fontSize: 12 }}
-                      />
-                      <ZAxis range={[40, 160]} />
-                      <RechartsTooltip cursor={{ strokeDasharray: "3 3" }} />
-                      {scatterByCluster.map((group) => (
-                        <Scatter
-                          key={group.name}
-                          name={group.name}
-                          data={group.data}
-                          fill={CLUSTER_COLORS[group.name] ?? "#64748b"}
-                        >
-                          {group.data.map((_, i) => (
-                            <Cell
-                              key={i}
-                              fill={CLUSTER_COLORS[group.name] ?? "#64748b"}
-                            />
-                          ))}
-                        </Scatter>
-                      ))}
-                    </ScatterChart>
-                  </ResponsiveContainer>
+                <div className="flex flex-col gap-3">
+                  <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                    <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">
+                      Projection PCA 2D — {clusterNames.join(" / ")}
+                    </h3>
+                    <ResponsiveContainer width="100%" height={320}>
+                      <ScatterChart
+                        margin={{ top: 10, right: 10, bottom: 10, left: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                        <XAxis
+                          type="number"
+                          dataKey="x"
+                          name="PC1"
+                          tick={{ fill: "#64748b", fontSize: 12 }}
+                        />
+                        <YAxis
+                          type="number"
+                          dataKey="y"
+                          name="PC2"
+                          tick={{ fill: "#64748b", fontSize: 12 }}
+                        />
+                        <ZAxis range={[40, 160]} />
+                        <RechartsTooltip cursor={{ strokeDasharray: "3 3" }} />
+                        {scatterByCluster.map((group) => (
+                          <Scatter
+                            key={group.name}
+                            name={group.name}
+                            data={group.data}
+                            fill={CLUSTER_COLORS[group.name] ?? "#64748b"}
+                          >
+                            {group.data.map((_, i) => (
+                              <Cell
+                                key={i}
+                                fill={CLUSTER_COLORS[group.name] ?? "#64748b"}
+                              />
+                            ))}
+                          </Scatter>
+                        ))}
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <InterpretationBlock
+                    text={RECHARTS_INTERPRETATIONS.pcaProjection}
+                  />
                 </div>
               )}
 
               <FullWidthChartList figures={modelPage?.figures ?? []} />
+
+              <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-indigo-800 text-sm leading-relaxed space-y-2">
+                <p>
+                  <strong>Synthèse :</strong> L&apos;exploration révèle des
+                  revenus asymétriques, des corrélations fortes entre catégories
+                  de dépenses et une réponse hétérogène aux campagnes — autant de
+                  signaux qui justifient une segmentation comportementale plutôt
+                  qu&apos;un ciblage démographique seul.
+                </p>
+                <p>
+                  Quatre algorithmes ont été comparés (K-Means, DBSCAN,
+                  Agglomerative, GMM) : K-Means avec k=2 est retenu pour sa
+                  lisibilité métier et la stabilité de ses centroïdes. La
+                  Silhouette (~0,32) indique une séparation acceptable pour un
+                  usage marketing, même si elle reste inférieure à celle d&apos;un
+                  problème de classification supervisée.
+                </p>
+                <p>
+                  Les deux segments identifiés — Premium (revenus et dépenses
+                  élevés) et Digital (achats web dominants) — appellent des
+                  actions distinctes : fidélité haut de gamme d&apos;un côté,
+                  campagnes digitales ciblées de l&apos;autre. La question à
+                  suivre en production est de savoir si ces profils restent
+                  stables dans le temps ou s&apos;ils nécessitent un
+                  recalcul mensuel des segments.
+                </p>
+              </div>
             </motion.div>
           )}
 
@@ -525,12 +611,27 @@ export function SegmentationModule() {
                 insights={interpretPage?.insights ?? []}
               />
 
-              {interpretPage?.insights.length ? (
-                <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-indigo-800 text-sm">
-                  <strong>Synthèse :</strong>{" "}
-                  {interpretPage.insights[interpretPage.insights.length - 1]}
-                </div>
-              ) : null}
+              <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-indigo-800 text-sm leading-relaxed space-y-2">
+                <p>
+                  <strong>Synthèse business :</strong> Segmenter le portefeuille
+                  en profils homogènes permet de concentrer le budget marketing
+                  sur les clients les plus réceptifs plutôt que de diluer les
+                  efforts en envois massifs à faible conversion.
+                </p>
+                <p>
+                  Le cluster Premium justifie un programme de fidélité
+                  exclusif et du cross-sell haut de gamme ; le cluster Digital
+                  répond mieux aux campagnes e-mail, push et promotions canal
+                  web. Les clients peu réactifs aux offres nécessitent une
+                  approche de réactivation distincte, sans sur-promotion.
+                </p>
+                <p>
+                  En exploitation, il faudra recalculer les segments
+                  régulièrement et surveiller la Silhouette pour détecter une
+                  dérive comportementale — car un profil « Digital » d&apos;hier
+                  peut devenir « Dormant » si la récence d&apos;achat se dégrade.
+                </p>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

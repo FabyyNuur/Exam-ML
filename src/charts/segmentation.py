@@ -22,6 +22,7 @@ from src.charts.sampling import (
     PLOTLY_SAMPLE_CLUSTER,
     PLOTLY_SAMPLE_DENDRO,
     PLOTLY_SAMPLE_HIST,
+    PLOTLY_SAMPLE_SCATTER,
     sample_df,
 )
 from src.constants import CLUSTER_API_COLUMNS
@@ -104,6 +105,132 @@ def build_distributions(cluster_path: str | Path, models_dir: str | Path) -> go.
             col=col,
         )
     fig.update_layout(title_text="Distribution des variables principales", height=650, width=1100)
+    return fig
+
+
+_INTERACTIVE_COMPARISONS = [
+    {
+        "x": "Income",
+        "y": "TotalSpend",
+        "xlab": "Revenu (€)",
+        "ylab": "Dépenses totales (€)",
+        "label": "Revenu × Dépenses",
+    },
+    {
+        "x": "Age",
+        "y": "TotalSpend",
+        "xlab": "Âge",
+        "ylab": "Dépenses totales (€)",
+        "label": "Âge × Dépenses",
+    },
+    {
+        "x": "Age",
+        "y": "Income",
+        "xlab": "Âge",
+        "ylab": "Revenu (€)",
+        "label": "Âge × Revenu",
+    },
+    {
+        "x": "NumWebPurchases",
+        "y": "NumStorePurchases",
+        "xlab": "Achats web",
+        "ylab": "Achats magasin",
+        "label": "Web × Magasin",
+    },
+    {
+        "x": "Recency",
+        "y": "TotalSpend",
+        "xlab": "Récence (jours)",
+        "ylab": "Dépenses totales (€)",
+        "label": "Récence × Dépenses",
+    },
+    {
+        "x": "Income",
+        "y": "MntWines",
+        "xlab": "Revenu (€)",
+        "ylab": "Dépenses vins (€)",
+        "label": "Revenu × Vins",
+    },
+]
+
+
+def build_interactive_exploration(
+    cluster_path: str | Path, models_dir: str | Path
+) -> go.Figure:
+    """Scatter interactif avec menu de comparaisons de variables (notebook + export Plotly)."""
+    ctx = _cluster_context(cluster_path, models_dir)
+    df = sample_df(ctx["df_result"], PLOTLY_SAMPLE_SCATTER, random_state=RANDOM_STATE)
+    cluster_names = ctx["cluster_names"]
+    palette = px.colors.qualitative.Set2
+    comparisons = _INTERACTIVE_COMPARISONS
+    cluster_ids = sorted(df["Cluster"].unique())
+    n_clusters = len(cluster_ids)
+
+    fig = go.Figure()
+    for ci, comp in enumerate(comparisons):
+        for cluster_id in cluster_ids:
+            subset = df[df["Cluster"] == cluster_id]
+            if comp["x"] not in subset.columns or comp["y"] not in subset.columns:
+                continue
+            name = cluster_names.get(int(cluster_id), f"Cluster {cluster_id}")
+            fig.add_trace(
+                go.Scatter(
+                    x=subset[comp["x"]],
+                    y=subset[comp["y"]],
+                    mode="markers",
+                    name=name,
+                    marker=dict(
+                        size=7,
+                        opacity=0.65,
+                        color=palette[int(cluster_id) % len(palette)],
+                    ),
+                    visible=ci == 0,
+                    legendgroup=name,
+                    showlegend=ci == 0,
+                )
+            )
+
+    buttons = []
+    for ci, comp in enumerate(comparisons):
+        visible = [False] * (len(comparisons) * n_clusters)
+        for j in range(n_clusters):
+            visible[ci * n_clusters + j] = True
+        buttons.append(
+            {
+                "label": comp["label"],
+                "method": "update",
+                "args": [
+                    {"visible": visible},
+                    {
+                        "xaxis.title": comp["xlab"],
+                        "yaxis.title": comp["ylab"],
+                        "title": f"Exploration interactive — {comp['label']}",
+                    },
+                ],
+            }
+        )
+
+    first = comparisons[0]
+    fig.update_layout(
+        title=f"Exploration interactive — {first['label']}",
+        xaxis_title=first["xlab"],
+        yaxis_title=first["ylab"],
+        height=520,
+        width=1000,
+        hovermode="closest",
+        updatemenus=[
+            {
+                "type": "dropdown",
+                "direction": "down",
+                "x": 0.0,
+                "y": 1.14,
+                "xanchor": "left",
+                "yanchor": "top",
+                "buttons": buttons,
+                "showactive": True,
+            }
+        ],
+    )
     return fig
 
 
@@ -430,6 +557,7 @@ def all_charts(
     path, models = Path(cluster_path), Path(models_dir)
     return {
         "ex2_distributions": lambda: build_distributions(path, models),
+        "ex2_interactive_explorer": lambda: build_interactive_exploration(path, models),
         "ex2_categorical": lambda: build_categorical(path, models),
         "ex2_spending_channels": lambda: build_spending_channels(path, models),
         "ex2_correlation": lambda: build_correlation(path, models),

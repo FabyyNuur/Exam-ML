@@ -205,7 +205,7 @@ def train_cluster_model(
             {"silhouette": best_silhouette, "davies_bouldin": db_score},
         )
 
-    export_cluster_eda(cluster_path)
+    export_cluster_eda(cluster_path, models_dir=models_dir)
     export_cluster_k_selection(cluster_path, k_min=k_min, k_max=k_max)
     export_cluster_summary(cluster_path, cluster_labels, best_k)
     return metrics
