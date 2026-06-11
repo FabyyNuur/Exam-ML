@@ -1,8 +1,6 @@
 """Helpers de modèles : entraînement, comparaison, sauvegarde."""
 
 import joblib
-import mlflow
-import mlflow.sklearn
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -52,6 +50,13 @@ def load_model(path: str):
 def log_model_mlflow(model, model_name: str, params: dict, metrics: dict):
     """Log un modèle dans MLflow (tolérant aux erreurs de tracking local)."""
     from pathlib import Path
+
+    try:
+        import mlflow
+        import mlflow.sklearn
+    except ImportError:
+        print(f"MLflow ignoré ({model_name}) : package non installé")
+        return
 
     root = Path(__file__).resolve().parent.parent
     try:
