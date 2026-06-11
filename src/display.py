@@ -236,46 +236,34 @@ def init_notebook_theme() -> None:
 def show_hero(title: str, objective: str, plan_items: list[str]) -> None:
     init_notebook_theme()
     items = "".join(f"<li>{_esc(item)}</li>" for item in plan_items)
-    display(
-        HTML(
-            f"""
+    display(HTML(f"""
     <div class="ml-root ml-hero">
         <h1>{_esc(title)}</h1>
         <div class="ml-objective"><strong>Objectif :</strong> {_esc(objective)}</div>
         <ol>{items}</ol>
     </div>
-    """
-        )
-    )
+    """))
 
 
 def show_section(title: str, subtitle: Optional[str] = None) -> None:
     init_notebook_theme()
     sub = f'<div class="ml-subtitle">{_esc(subtitle)}</div>' if subtitle else ""
-    display(
-        HTML(
-            f"""
+    display(HTML(f"""
     <div class="ml-root ml-section">
         <h2>{_esc(title)}</h2>
         {sub}
     </div>
-    """
-        )
-    )
+    """))
 
 
 def _show_card(text: str, label: str, css_class: str) -> None:
     init_notebook_theme()
-    display(
-        HTML(
-            f"""
+    display(HTML(f"""
     <div class="ml-root ml-card {css_class}">
         <div class="ml-label">{_esc(label)}</div>
         <div>{text}</div>
     </div>
-    """
-        )
-    )
+    """))
 
 
 def show_insight(text: str) -> None:
@@ -315,16 +303,12 @@ def show_badge(label: str, status: str = "default") -> None:
 def show_findings_list(items: list[str], title: str = "Points clés") -> None:
     init_notebook_theme()
     lis = "".join(f"<li>{_esc(item)}</li>" for item in items)
-    display(
-        HTML(
-            f"""
+    display(HTML(f"""
     <div class="ml-root ml-card insight">
         <div class="ml-label">{_esc(title)}</div>
         <ul class="ml-findings">{lis}</ul>
     </div>
-    """
-        )
-    )
+    """))
 
 
 def show_architecture_card(title: str, steps: list[str]) -> None:
@@ -335,16 +319,12 @@ def show_architecture_card(title: str, steps: list[str]) -> None:
             parts.append('<span class="ml-arch-arrow">→</span>')
         parts.append(f'<span class="ml-arch-step">{_esc(step)}</span>')
     flow = "".join(parts)
-    display(
-        HTML(
-            f"""
+    display(HTML(f"""
     <div class="ml-root ml-card info">
         <div class="ml-label">{_esc(title)}</div>
         <div class="ml-arch">{flow}</div>
     </div>
-    """
-        )
-    )
+    """))
 
 
 def show_table_html(df: pd.DataFrame, title: Optional[str] = None) -> None:

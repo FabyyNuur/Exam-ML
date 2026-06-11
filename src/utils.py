@@ -7,12 +7,7 @@ from typing import Optional, Tuple
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from sklearn.metrics import (
-    average_precision_score,
-    confusion_matrix,
-    roc_auc_score,
-    roc_curve,
-)
+from sklearn.metrics import average_precision_score, confusion_matrix, roc_auc_score, roc_curve
 
 from src.constants import COLORS
 
@@ -115,15 +110,11 @@ def show_figure(
         include_plotlyjs="cdn",
         config={"displayModeBar": True, "responsive": True, "displaylogo": False},
     )
-    display(
-        HTML(
-            f"""
+    display(HTML(f"""
     <div class="ml-root ml-chart-card">
         <div class="ml-chart-inner">{chart_html}</div>
     </div>
-    """
-        )
-    )
+    """))
     if path:
         save_figure(fig, path, width=width, height=height)
     # Ne pas retourner fig : Jupyter ré-afficherait la figure une 2e fois

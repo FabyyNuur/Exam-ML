@@ -28,12 +28,7 @@ from src.analytics_export import (
     export_fraud_models,
 )
 from src.charts.export import export_all_charts
-from src.constants import (
-    CLUSTER_API_COLUMNS,
-    FRAUD_FEATURE_COLUMNS,
-    FRAUD_THRESHOLD,
-    TYPE_MAP,
-)
+from src.constants import CLUSTER_API_COLUMNS, FRAUD_FEATURE_COLUMNS, FRAUD_THRESHOLD, TYPE_MAP
 from src.models import FRAUD_MODELS, cross_validate_models, log_model_mlflow, save_model
 from src.preprocessing import (
     clean_customer_data,

@@ -16,22 +16,12 @@ from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from src.charts.sampling import (
-    PLOTLY_SAMPLE_HIST,
-    PLOTLY_SAMPLE_SCATTER,
-    sample_df,
-    sample_series,
-)
+from src.charts.sampling import PLOTLY_SAMPLE_HIST, PLOTLY_SAMPLE_SCATTER, sample_df, sample_series
 from src.constants import FRAUD_THRESHOLD
 from src.models import FRAUD_MODELS
 from src.preprocessing import load_fraud_data
 from src.training import prepare_fraud_matrix
-from src.utils import (
-    COLORS,
-    plot_class_distribution,
-    plot_confusion_matrix,
-    plot_roc_curve,
-)
+from src.utils import COLORS, plot_class_distribution, plot_confusion_matrix, plot_roc_curve
 
 RANDOM_STATE = 42
 

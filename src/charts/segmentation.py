@@ -25,11 +25,7 @@ from src.charts.sampling import (
     sample_df,
 )
 from src.constants import CLUSTER_API_COLUMNS
-from src.preprocessing import (
-    clean_customer_data,
-    engineer_customer_features,
-    load_cluster_data,
-)
+from src.preprocessing import clean_customer_data, engineer_customer_features, load_cluster_data
 from src.training import prepare_cluster_matrix
 from src.utils import COLORS, plot_silhouette
 
