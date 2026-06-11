@@ -18,6 +18,7 @@ services:
         - requirements.txt
         - data/raw/**
         - models/metadata.json
+        - reports/analytics/**
         - reports/figures/mlops_monitoring.png
     envVars:
       - key: PYTHON_VERSION

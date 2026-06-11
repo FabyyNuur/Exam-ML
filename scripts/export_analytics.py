@@ -45,16 +45,27 @@ def main() -> None:
         X_scaled = scaler.fit_transform(X_train)
         cv_results = cross_validate_models(FRAUD_MODELS, X_scaled, y_train)
 
+    if not fraud_path.is_file() and not cluster_path.is_file():
+        print(
+            "Aucun CSV raw disponible — conservation des analytics déjà présents "
+            "dans reports/analytics/."
+        )
+        return
+
     models_dir = ROOT / "models"
     export_all_analytics(
-        fraud_path if fraud_path.exists() else cluster_path,
-        cluster_path if cluster_path.exists() else fraud_path,
+        fraud_path,
+        cluster_path,
         cv_results=cv_results,
         cluster_labels=cluster_labels,
         best_k=best_k,
     )
-    if fraud_path.exists() and cluster_path.exists():
+    if fraud_path.is_file() and cluster_path.is_file():
         export_all_charts(fraud_path, cluster_path, models_dir)
+    elif fraud_path.is_file():
+        print("Charts Plotly partiels : data_cluster.csv absent")
+    elif cluster_path.is_file():
+        print("Charts Plotly partiels : detection_fraude.csv absent")
     print("Analytics exportés dans reports/analytics/")
 
 

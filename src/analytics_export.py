@@ -252,11 +252,21 @@ def export_all_analytics(
     cluster_labels: dict[int, str] | None = None,
     best_k: int = 2,
 ) -> None:
-    """Exporte tous les fichiers analytics."""
-    export_fraud_eda(fraud_path)
-    if cv_results:
-        export_fraud_models(cv_results)
-    export_cluster_eda(cluster_path)
-    export_cluster_k_selection(cluster_path)
-    if cluster_labels is not None:
-        export_cluster_summary(cluster_path, cluster_labels, best_k)
+    """Exporte tous les fichiers analytics (ignore les jeux de données absents)."""
+    fraud_path = Path(fraud_path)
+    cluster_path = Path(cluster_path)
+
+    if fraud_path.is_file():
+        export_fraud_eda(fraud_path)
+        if cv_results:
+            export_fraud_models(cv_results)
+    else:
+        print(f"Analytics fraude ignorés : {fraud_path} absent")
+
+    if cluster_path.is_file():
+        export_cluster_eda(cluster_path)
+        export_cluster_k_selection(cluster_path)
+        if cluster_labels is not None:
+            export_cluster_summary(cluster_path, cluster_labels, best_k)
+    else:
+        print(f"Analytics cluster ignorés : {cluster_path} absent")

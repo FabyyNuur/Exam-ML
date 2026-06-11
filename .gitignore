@@ -1,6 +1,3 @@
-# Données volumineuses — télécharger manuellement (voir README)
-data/raw/detection_fraude.csv
-
 # Python
 .pytest_cache/
 __pycache__/
@@ -37,8 +34,8 @@ models/*.joblib
 models/*.h5
 models/*.pt
 
-# Reports générés (non versionnés — régénérer via scripts/export_analytics.py)
-reports/analytics/
+# Reports générés localement (figures notebooks)
+# Analytics JSON versionnés pour le dashboard Render (sans detection_fraude.csv)
 
 # Figures notebooks (régénérées via show_figure) — Plotly JSON suffit pour le dashboard
 reports/figures/*
