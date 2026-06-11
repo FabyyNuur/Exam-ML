@@ -11,7 +11,7 @@ export interface FraudMetadata {
   f1: number;
   precision: number;
   recall: number;
-  cv_roc_auc_mean: number;
+  cv_roc_auc_mean?: number;
 }
 
 export interface ClusterMetadata {

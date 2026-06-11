@@ -241,7 +241,13 @@ export function FraudModule() {
                   metrics={[
                     { label: 'Modèle retenu', value: fraudMeta.model_name.toUpperCase(), color: 'text-red-600' },
                     { label: 'ROC-AUC', value: fraudMeta.roc_auc.toFixed(3), color: 'text-red-600' },
-                    { label: 'CV ROC-AUC', value: fraudMeta.cv_roc_auc_mean.toFixed(3), color: 'text-red-500' },
+                    {
+                      label: 'CV ROC-AUC',
+                      value: fraudMeta.cv_roc_auc_mean != null
+                        ? fraudMeta.cv_roc_auc_mean.toFixed(3)
+                        : '—',
+                      color: 'text-red-500',
+                    },
                     { label: 'F1 (seuil 0.3)', value: fraudMeta.f1.toFixed(3), color: 'text-red-400' },
                   ]}
                 />

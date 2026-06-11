@@ -42,6 +42,7 @@ metadata = {
     "fraud": {
         "model_name": "xgboost",
         "roc_auc": 0.99,
+        "cv_roc_auc_mean": 0.996,
         "f1": 0.5,
         "precision": 0.4,
         "recall": 0.9,
