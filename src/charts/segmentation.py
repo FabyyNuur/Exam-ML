@@ -154,9 +154,7 @@ _INTERACTIVE_COMPARISONS = [
 ]
 
 
-def build_interactive_exploration(
-    cluster_path: str | Path, models_dir: str | Path
-) -> go.Figure:
+def build_interactive_exploration(cluster_path: str | Path, models_dir: str | Path) -> go.Figure:
     """Scatter interactif avec menu de comparaisons de variables (notebook + export Plotly)."""
     ctx = _cluster_context(cluster_path, models_dir)
     df = sample_df(ctx["df_result"], PLOTLY_SAMPLE_SCATTER, random_state=RANDOM_STATE)
