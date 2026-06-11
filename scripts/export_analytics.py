@@ -10,7 +10,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from src.analytics_export import export_all_analytics  # noqa: E402
-from src.charts.export import export_all_charts  # noqa: E402
+from src.charts.export import export_all_charts, export_plotly_chart  # noqa: E402
+from src.charts.fraud import build_nn_training  # noqa: E402
 from src.models import FRAUD_MODELS, cross_validate_models  # noqa: E402
 from src.analytics_export import _prepare_fraud_matrix  # noqa: E402
 from src.preprocessing import load_fraud_data  # noqa: E402
@@ -66,6 +67,7 @@ def main() -> None:
         print("Charts Plotly partiels : data_cluster.csv absent")
     elif cluster_path.is_file():
         print("Charts Plotly partiels : detection_fraude.csv absent")
+        export_plotly_chart(build_nn_training(), "ex1_nn_training")
     print("Analytics exportés dans reports/analytics/")
 
 

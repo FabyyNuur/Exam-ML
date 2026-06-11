@@ -53,7 +53,8 @@ def export_all_charts(
     from src.charts import fraud, segmentation
 
     exported: list[str] = []
-    for chart_id, builder in fraud.all_charts(fraud_path, models_dir).items():
+    fraud_charts = fraud.all_charts(fraud_path, models_dir)
+    for chart_id, builder in fraud_charts.items():
         try:
             export_plotly_chart(builder(), chart_id)
         except Exception as exc:
@@ -62,6 +63,13 @@ def export_all_charts(
             fig.update_layout(title=f"{chart_id} — données indisponibles", height=400)
             export_plotly_chart(fig, chart_id)
         exported.append(chart_id)
+
+    if "ex1_nn_training" not in exported:
+        try:
+            export_plotly_chart(fraud.build_nn_training(), "ex1_nn_training")
+            exported.append("ex1_nn_training")
+        except Exception as exc:
+            print(f"Chart ex1_nn_training ignoré : {exc}")
     for chart_id, builder in segmentation.all_charts(cluster_path, models_dir).items():
         try:
             export_plotly_chart(builder(), chart_id)

@@ -55,21 +55,54 @@ function plotlyHeight(filename: string): number {
   return PLOTLY_CHART_HEIGHTS[filename] ?? 480;
 }
 
-function FullWidthChart({
+function InterpretationBlock({
+  text,
+  className = "",
+}: {
+  text: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`bg-indigo-50 border border-indigo-100 px-4 py-3 rounded-lg text-sm text-indigo-900 leading-relaxed ${className}`}
+    >
+      <strong>Interprétation :</strong> {text}
+    </div>
+  );
+}
+
+function ChartWithInterpretation({
   filename,
   figure,
+  height = 480,
 }: {
   filename: string;
   figure?: PageFigure;
+  height?: number;
 }) {
+  const hasInterpretation = Boolean(figure?.interpretation);
+
+  const chart = (
+    <ChartPanel
+      filename={filename}
+      title={figure?.title}
+      caption={figure?.caption}
+      height={height}
+      fitContent={hasInterpretation}
+      className={hasInterpretation ? "shrink-0" : "w-full"}
+    />
+  );
+
+  if (!hasInterpretation) {
+    return chart;
+  }
+
   return (
-    <div className="w-full">
-      <ChartPanel
-        filename={filename}
-        title={figure?.title}
-        caption={figure?.caption}
-        height={plotlyHeight(filename)}
-        className="w-full"
+    <div className="flex flex-col lg:flex-row gap-4 items-stretch w-full">
+      {chart}
+      <InterpretationBlock
+        text={figure!.interpretation!}
+        className="lg:flex-1 lg:min-w-[260px] flex items-center"
       />
     </div>
   );
@@ -80,10 +113,11 @@ function FullWidthChartList({ figures }: { figures: PageFigure[] }) {
   return (
     <div className="flex flex-col gap-8 w-full">
       {figures.map((figure) => (
-        <FullWidthChart
+        <ChartWithInterpretation
           key={figure.filename}
           filename={figure.filename}
           figure={figure}
+          height={plotlyHeight(figure.filename)}
         />
       ))}
     </div>

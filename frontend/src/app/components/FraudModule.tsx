@@ -17,6 +17,7 @@ import {
   FileText,
   Search,
   Settings,
+  Scale,
   Cpu,
   UploadCloud,
 } from "lucide-react";
@@ -28,12 +29,13 @@ import { PredictFraudModal } from "./PredictFraudModal";
 import {
   useFraudEda,
   useFraudModels,
+  useFraudSmote,
   useMetadata,
   usePageContent,
 } from "@/lib/hooks";
 import type { PageContent, PageFigure } from "@/lib/api";
 
-type Tab = "CONTEXT" | "EDA" | "PREPROCESSING" | "MODELING";
+type Tab = "CONTEXT" | "EDA" | "PREPROCESSING" | "IMBALANCE" | "MODELING";
 
 const PIE_COLORS = ["#94a3b8", "#ef4444"];
 
@@ -41,6 +43,7 @@ const PLOTLY_CHART_HEIGHTS: Record<string, number> = {
   "ex1_amount_distribution.png": 440,
   "ex1_suspicious_behavior.png": 480,
   "ex1_roc_curves.png": 520,
+  "ex1_nn_training.png": 480,
   "ex1_best_model_eval.png": 560,
   "ex1_threshold_analysis.png": 520,
   "ex1_shap_importance.png": 500,
@@ -64,9 +67,17 @@ const RECHARTS_INTERPRETATIONS = {
     "et le F1 restent plus modérés en raison du fort déséquilibre des classes.",
 } as const;
 
-function InterpretationBlock({ text }: { text: string }) {
+function InterpretationBlock({
+  text,
+  className = "",
+}: {
+  text: string;
+  className?: string;
+}) {
   return (
-    <div className="bg-red-50 border border-red-100 px-4 py-3 rounded-lg text-sm text-red-900 leading-relaxed">
+    <div
+      className={`bg-red-50 border border-red-100 px-4 py-3 rounded-lg text-sm text-red-900 leading-relaxed ${className}`}
+    >
       <strong>Interprétation :</strong> {text}
     </div>
   );
@@ -88,23 +99,30 @@ function ChartWithInterpretation({
   figure?: PageFigure;
   height?: number;
 }) {
-  if (!figure) {
-    return (
-      <ChartPanel filename={filename} height={height} className="w-full" />
-    );
+  const hasInterpretation = Boolean(figure?.interpretation);
+
+  const chart = (
+    <ChartPanel
+      filename={filename}
+      title={figure?.title}
+      caption={figure?.caption}
+      height={height}
+      fitContent={hasInterpretation}
+      className={hasInterpretation ? "shrink-0" : "w-full"}
+    />
+  );
+
+  if (!hasInterpretation) {
+    return chart;
   }
+
   return (
-    <div className="flex flex-col gap-3 w-full">
-      <ChartPanel
-        filename={filename}
-        title={figure.title}
-        caption={figure.caption}
-        height={height}
-        className="w-full"
+    <div className="flex flex-col lg:flex-row gap-4 items-stretch w-full">
+      {chart}
+      <InterpretationBlock
+        text={figure!.interpretation!}
+        className="lg:flex-1 lg:min-w-[260px] flex items-center"
       />
-      {figure.interpretation && (
-        <InterpretationBlock text={figure.interpretation} />
-      )}
     </div>
   );
 }
@@ -117,13 +135,11 @@ function FullWidthChart({
   figure?: PageFigure;
 }) {
   return (
-    <div className="w-full">
-      <ChartWithInterpretation
-        filename={filename}
-        figure={figure}
-        height={plotlyHeight(filename)}
-      />
-    </div>
+    <ChartWithInterpretation
+      filename={filename}
+      figure={figure}
+      height={plotlyHeight(filename)}
+    />
   );
 }
 
@@ -133,11 +149,13 @@ export function FraudModule() {
   const { getPage } = usePageContent();
   const { data: eda } = useFraudEda();
   const { data: modelsData } = useFraudModels();
+  const { data: smoteData } = useFraudSmote();
   const { data: metadata } = useMetadata();
 
   const contextPage = getPage("ex1_eda");
   const edaPage = contextPage;
   const prepPage = getPage("ex1_preprocessing");
+  const imbalancePage = getPage("ex1_imbalance");
   const modelPage = getPage("ex1_modeling");
   const evalPage = getPage("ex1_evaluation");
   const fraudMeta = metadata?.fraud;
@@ -189,6 +207,11 @@ export function FraudModule() {
               id: "PREPROCESSING",
               label: "PRÉTRAITEMENT",
               icon: <Settings size={16} />,
+            },
+            {
+              id: "IMBALANCE",
+              label: "DÉSÉQUILIBRE (SMOTE)",
+              icon: <Scale size={16} />,
             },
             {
               id: "MODELING",
@@ -386,6 +409,45 @@ export function FraudModule() {
             </motion.div>
           )}
 
+          {activeTab === "IMBALANCE" && (
+            <motion.div
+              key="imbalance"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex flex-col gap-8"
+            >
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-900 text-sm">
+                <strong>Attention :</strong> Stratégies SMOTE, class_weight=&apos;balanced&apos;,
+                seuil de décision ajusté — ~0,1&nbsp;% de fraudes dans le dataset.
+              </div>
+
+              <InsightsList
+                title="Gestion du déséquilibre"
+                insights={imbalancePage?.insights ?? []}
+                variant="red"
+              />
+
+              {smoteData?.metrics?.length ? (
+                <MetricsCards
+                  metrics={smoteData.metrics.map((m) => ({
+                    label: m.label,
+                    value: m.count.toLocaleString("fr-FR"),
+                    color: m.label.includes("Fraude") ? "text-red-600" : "text-slate-600",
+                  }))}
+                />
+              ) : (
+                <p className="text-slate-400 text-sm">
+                  Métriques SMOTE non disponibles — exécuter le pipeline.
+                </p>
+              )}
+
+              {smoteData?.insight && (
+                <InterpretationBlock text={smoteData.insight} />
+              )}
+            </motion.div>
+          )}
+
           {activeTab === "MODELING" && (
             <motion.div
               key="modeling"
@@ -505,6 +567,11 @@ export function FraudModule() {
               <FullWidthChart
                 filename="ex1_roc_curves.png"
                 figure={getFigure(modelPage, "ex1_roc_curves.png")}
+              />
+
+              <FullWidthChart
+                filename="ex1_nn_training.png"
+                figure={getFigure(modelPage, "ex1_nn_training.png")}
               />
 
               <InsightsList

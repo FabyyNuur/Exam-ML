@@ -7,6 +7,7 @@ import {
   CustomerResponse,
   FraudEdaAnalytics,
   FraudModelMetric,
+  FraudSmoteAnalytics,
   FraudRequest,
   FraudResponse,
   HealthResponse,
@@ -62,6 +63,10 @@ export function useFraudEda() {
 
 export function useFraudModels() {
   return useFetch<{ models: FraudModelMetric[] }>(api.fraudModels);
+}
+
+export function useFraudSmote() {
+  return useFetch<FraudSmoteAnalytics>(api.fraudSmote);
 }
 
 export function useClusterSummary() {

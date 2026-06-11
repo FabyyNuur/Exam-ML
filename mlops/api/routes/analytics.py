@@ -33,6 +33,11 @@ def fraud_models():
     return _load_json("fraud_models.json")
 
 
+@router.get("/analytics/fraud/smote")
+def fraud_smote():
+    return _load_json("fraud_smote.json")
+
+
 @router.get("/analytics/cluster/eda")
 def cluster_eda():
     return _load_json("cluster_eda.json")

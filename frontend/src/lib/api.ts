@@ -67,6 +67,17 @@ export interface FraudModelMetric {
   rappel: number;
 }
 
+export interface FraudSmoteMetric {
+  label: string;
+  count: number;
+}
+
+export interface FraudSmoteAnalytics {
+  metrics: FraudSmoteMetric[];
+  sampling_strategy: number;
+  insight: string;
+}
+
 export interface ClusterPoint {
   x: number;
   y: number;
@@ -157,6 +168,7 @@ export const api = {
   pages: () => request<PagesResponse>('/content/pages'),
   fraudEda: () => request<FraudEdaAnalytics>('/analytics/fraud/eda'),
   fraudModels: () => request<{ models: FraudModelMetric[] }>('/analytics/fraud/models'),
+  fraudSmote: () => request<FraudSmoteAnalytics>('/analytics/fraud/smote'),
   clusterSummary: () => request<ClusterSummary>('/analytics/cluster/summary'),
   clusterEda: () => request<ClusterEdaAnalytics>('/analytics/cluster/eda'),
   clusterKSelection: () => request<ClusterKSelection>('/analytics/cluster/k-selection'),

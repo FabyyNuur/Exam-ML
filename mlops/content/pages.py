@@ -96,7 +96,20 @@ PAGES = [
             "Features dérivées : error_balance_orig, error_balance_dest, orig_zeroed.",
             "Encodage ordinal du type de transaction (PAYMENT → 0 … CASH_IN → 4).",
             "Standardisation (StandardScaler) avant entraînement.",
-            "SMOTE appliqué sur le train (ratio 10 %) pour améliorer le recall.",
+        ],
+        "figures": [],
+    },
+    {
+        "id": "ex1_imbalance",
+        "label": "Ex1 — Déséquilibre",
+        "section": "Exercice 1 · Fraude",
+        "phase": "preprocessing",
+        "title": "Gestion du déséquilibre des classes",
+        "subtitle": "~0,1 % de fraudes dans le dataset",
+        "insights": [
+            "Stratégies combinées : SMOTE, class_weight='balanced', seuil de décision ajusté.",
+            "SMOTE porte la classe fraude à 10 % du volume normal pour stabiliser l'apprentissage.",
+            "Le rééquilibrage s'applique uniquement sur le jeu d'entraînement — le test reste déséquilibré.",
         ],
         "figures": [],
     },
@@ -112,6 +125,7 @@ PAGES = [
             "Quatre modèles ont été testés : régression logistique, Random Forest, XGBoost et LightGBM.",
             "XGBoost est retenu avec un CV ROC-AUC d'environ 0,996, offrant le meilleur compromis entre discrimination et stabilité.",
             "Le seuil décisionnel a été abaissé à 30 % afin de maximiser le rappel dans un contexte de détection de fraude.",
+            "Un réseau de neurones dense (128-64-32) est entraîné à titre exploratoire sur les données SMOTE.",
         ],
         "figures": [
             (
@@ -121,6 +135,14 @@ PAGES = [
                 "Les courbes ROC montrent que XGBoost et LightGBM atteignent les AUC les plus élevés (supérieurs à 0,99). "
                 "La diagonale en pointillés représente un classifieur aléatoire ; plus une courbe s'en éloigne vers le "
                 "coin supérieur gauche, meilleure est la discrimination du modèle.",
+            ),
+            (
+                "ex1_nn_training.png",
+                "Réseau de neurones",
+                "Courbes Loss & AUC (20 epochs)",
+                "Le MLP TensorFlow (Dense 128-64-32, dropout) converge en AUC sur le train. "
+                "XGBoost reste retenu pour la production en raison de sa meilleure interprétabilité (SHAP) "
+                "et de ses performances en validation croisée.",
             ),
         ],
         "metadata_key": "fraud",

@@ -12,6 +12,8 @@ interface PlotlyChartProps {
   caption?: string;
   className?: string;
   height?: number;
+  /** Limite la largeur du panneau à celle intrinsèque du graphique Plotly. */
+  fitContent?: boolean;
 }
 
 export function PlotlyChart({
@@ -22,9 +24,20 @@ export function PlotlyChart({
   caption,
   className = '',
   height = 420,
+  fitContent = false,
 }: PlotlyChartProps) {
+  const intrinsicWidth =
+    typeof data?.layout?.width === 'number' ? data.layout.width : undefined;
+
   return (
-    <div className={`bg-white border border-slate-200 rounded-xl shadow-sm ${className}`}>
+    <div
+      className={`bg-white border border-slate-200 rounded-xl shadow-sm ${fitContent ? 'w-fit max-w-full' : ''} ${className}`}
+      style={
+        fitContent && intrinsicWidth
+          ? { maxWidth: intrinsicWidth }
+          : undefined
+      }
+    >
       {(title || caption) && (
         <div className="px-4 py-3 border-b border-slate-100">
           {title && <h4 className="text-sm font-bold text-slate-800 uppercase">{title}</h4>}
@@ -46,11 +59,16 @@ export function PlotlyChart({
             layout={{
               ...data.layout,
               autosize: true,
+              width: fitContent ? undefined : data.layout?.width,
               height,
               margin: { ...(data.layout?.margin as object), t: data.layout?.title ? 50 : 30 },
             }}
             config={{ responsive: true, displayModeBar: true, displaylogo: false }}
-            style={{ width: '100%', height }}
+            style={{
+              width: '100%',
+              maxWidth: fitContent && intrinsicWidth ? intrinsicWidth : undefined,
+              height,
+            }}
             useResizeHandler
           />
         )}

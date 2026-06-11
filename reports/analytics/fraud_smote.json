@@ -1,0 +1,22 @@
+{
+  "metrics": [
+    {
+      "label": "Normal avant SMOTE",
+      "count": 837946
+    },
+    {
+      "label": "Fraude avant SMOTE",
+      "count": 914
+    },
+    {
+      "label": "Normal après SMOTE",
+      "count": 837946
+    },
+    {
+      "label": "Fraude après SMOTE",
+      "count": 83794
+    }
+  ],
+  "sampling_strategy": 0.1,
+  "insight": "SMOTE porte la classe fraude à 10 % du volume normal pour stabiliser l'apprentissage."
+}

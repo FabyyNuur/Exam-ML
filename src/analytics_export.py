@@ -7,9 +7,11 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from imblearn.over_sampling import SMOTE
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import davies_bouldin_score, silhouette_score
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from src.constants import CLUSTER_API_COLUMNS, FRAUD_FEATURE_COLUMNS, TYPE_MAP
@@ -88,6 +90,51 @@ def export_fraud_eda(fraud_path: str | Path) -> dict:
         "total_transactions": total,
     }
     _write_json(ANALYTICS_DIR / "fraud_eda.json", payload)
+    return payload
+
+
+FRAUD_SMOTE_FALLBACK = {
+    "metrics": [
+        {"label": "Normal avant SMOTE", "count": 837_946},
+        {"label": "Fraude avant SMOTE", "count": 914},
+        {"label": "Normal après SMOTE", "count": 837_946},
+        {"label": "Fraude après SMOTE", "count": 83_794},
+    ],
+    "sampling_strategy": 0.1,
+    "insight": (
+        "SMOTE porte la classe fraude à 10 % du volume normal pour stabiliser l'apprentissage."
+    ),
+}
+
+
+def export_fraud_smote(fraud_path: str | Path | None = None) -> dict:
+    """Exporte les effectifs avant/après SMOTE (notebook ex1)."""
+    if fraud_path is not None and Path(fraud_path).is_file():
+        df = load_fraud_data(str(fraud_path))
+        X, y = _prepare_fraud_matrix(df)
+        X_train, _, y_train, _ = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
+        )
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        smote = SMOTE(random_state=42, sampling_strategy=0.1)
+        _, y_resampled = smote.fit_resample(X_train_scaled, y_train)
+        before = y_train.value_counts().to_dict()
+        after = pd.Series(y_resampled).value_counts().to_dict()
+        payload = {
+            "metrics": [
+                {"label": "Normal avant SMOTE", "count": int(before.get(0, 0))},
+                {"label": "Fraude avant SMOTE", "count": int(before.get(1, 0))},
+                {"label": "Normal après SMOTE", "count": int(after.get(0, 0))},
+                {"label": "Fraude après SMOTE", "count": int(after.get(1, 0))},
+            ],
+            "sampling_strategy": 0.1,
+            "insight": FRAUD_SMOTE_FALLBACK["insight"],
+        }
+    else:
+        payload = dict(FRAUD_SMOTE_FALLBACK)
+
+    _write_json(ANALYTICS_DIR / "fraud_smote.json", payload)
     return payload
 
 
@@ -258,10 +305,12 @@ def export_all_analytics(
 
     if fraud_path.is_file():
         export_fraud_eda(fraud_path)
+        export_fraud_smote(fraud_path)
         if cv_results:
             export_fraud_models(cv_results)
     else:
         print(f"Analytics fraude ignorés : {fraud_path} absent")
+        export_fraud_smote()
 
     if cluster_path.is_file():
         export_cluster_eda(cluster_path)

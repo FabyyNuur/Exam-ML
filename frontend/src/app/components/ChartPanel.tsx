@@ -10,6 +10,7 @@ interface ChartPanelProps {
   className?: string;
   preferPlotly?: boolean;
   height?: number;
+  fitContent?: boolean;
 }
 
 export function chartIdFromFilename(filename: string): string {
@@ -23,6 +24,7 @@ export function ChartPanel({
   className,
   preferPlotly = true,
   height,
+  fitContent,
 }: ChartPanelProps) {
   const chartId = chartIdFromFilename(filename);
   const { data, loading, error } = usePlotlyChart(chartId);
@@ -37,6 +39,7 @@ export function ChartPanel({
         caption={caption}
         className={className}
         height={height}
+        fitContent={fitContent}
       />
     );
   }
