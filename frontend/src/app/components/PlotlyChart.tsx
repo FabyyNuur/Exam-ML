@@ -24,14 +24,14 @@ export function PlotlyChart({
   height = 420,
 }: PlotlyChartProps) {
   return (
-    <div className={`bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden ${className}`}>
+    <div className={`bg-white border border-slate-200 rounded-xl shadow-sm ${className}`}>
       {(title || caption) && (
         <div className="px-4 py-3 border-b border-slate-100">
           {title && <h4 className="text-sm font-bold text-slate-800 uppercase">{title}</h4>}
           {caption && <p className="text-xs text-slate-500 mt-1">{caption}</p>}
         </div>
       )}
-      <div className="p-2 min-h-[200px] flex items-center justify-center">
+      <div className="p-2 min-h-[200px] w-full overflow-x-auto">
         {loading && (
           <div className="flex items-center gap-2 text-slate-400 text-sm py-12">
             <Loader2 size={18} className="animate-spin" /> Chargement du graphique…

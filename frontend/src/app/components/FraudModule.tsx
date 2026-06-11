@@ -17,10 +17,20 @@ type Tab = 'CONTEXT' | 'EDA' | 'PREPROCESSING' | 'MODELING';
 
 const PIE_COLORS = ['#94a3b8', '#ef4444'];
 
-const CHART_HEIGHTS: Record<string, number> = {
-  'ex1_shap_beeswarm.png': 560,
-  'ex1_shap_force_plot.png': 560,
+const PLOTLY_CHART_HEIGHTS: Record<string, number> = {
+  'ex1_amount_distribution.png': 440,
+  'ex1_suspicious_behavior.png': 480,
+  'ex1_roc_curves.png': 520,
+  'ex1_best_model_eval.png': 560,
+  'ex1_threshold_analysis.png': 520,
+  'ex1_shap_importance.png': 500,
+  'ex1_shap_beeswarm.png': 640,
+  'ex1_shap_force_plot.png': 640,
 };
+
+function plotlyHeight(filename: string): number {
+  return PLOTLY_CHART_HEIGHTS[filename] ?? 480;
+}
 
 const RECHARTS_INTERPRETATIONS = {
   fraudByType:
@@ -56,17 +66,42 @@ function ChartWithInterpretation({
   height?: number;
 }) {
   if (!figure) {
-    return <ChartPanel filename={filename} height={height} />;
+    return (
+      <ChartPanel
+        filename={filename}
+        height={height}
+        className="w-full"
+      />
+    );
   }
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 w-full">
       <ChartPanel
         filename={filename}
         title={figure.title}
         caption={figure.caption}
         height={height}
+        className="w-full"
       />
       {figure.interpretation && <InterpretationBlock text={figure.interpretation} />}
+    </div>
+  );
+}
+
+function FullWidthChart({
+  filename,
+  figure,
+}: {
+  filename: string;
+  figure?: PageFigure;
+}) {
+  return (
+    <div className="w-full">
+      <ChartWithInterpretation
+        filename={filename}
+        figure={figure}
+        height={plotlyHeight(filename)}
+      />
     </div>
   );
 }
@@ -168,7 +203,7 @@ export function FraudModule() {
             <motion.div key="eda" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex flex-col gap-8">
               <InsightsList title="Analyses exploratoires" insights={edaPage?.insights ?? []} variant="red" />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl">
                 <div className="flex flex-col gap-3">
                   <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                     <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">Déséquilibre des classes</h3>
@@ -212,15 +247,16 @@ export function FraudModule() {
                 </div>
               </div>
 
-              <ChartWithInterpretation
-                filename="ex1_amount_distribution.png"
-                figure={getFigure(edaPage, 'ex1_amount_distribution.png')}
-              />
-
-              <ChartWithInterpretation
-                filename="ex1_suspicious_behavior.png"
-                figure={getFigure(edaPage, 'ex1_suspicious_behavior.png')}
-              />
+              <div className="flex flex-col gap-8 w-full">
+                <FullWidthChart
+                  filename="ex1_amount_distribution.png"
+                  figure={getFigure(edaPage, 'ex1_amount_distribution.png')}
+                />
+                <FullWidthChart
+                  filename="ex1_suspicious_behavior.png"
+                  figure={getFigure(edaPage, 'ex1_suspicious_behavior.png')}
+                />
+              </div>
             </motion.div>
           )}
 
@@ -253,7 +289,7 @@ export function FraudModule() {
                 />
               )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 max-w-2xl">
                 {modelsData?.models?.length ? (
                   <div className="flex flex-col gap-3">
                     <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
@@ -297,10 +333,9 @@ export function FraudModule() {
                 variant="red"
               />
 
-              <ChartWithInterpretation
+              <FullWidthChart
                 filename="ex1_roc_curves.png"
                 figure={getFigure(modelPage, 'ex1_roc_curves.png')}
-                height={480}
               />
 
               <InsightsList
@@ -309,14 +344,15 @@ export function FraudModule() {
                 variant="red"
               />
 
-              {evalPage?.figures.map((figure) => (
-                <ChartWithInterpretation
-                  key={figure.filename}
-                  filename={figure.filename}
-                  figure={figure}
-                  height={CHART_HEIGHTS[figure.filename] ?? 480}
-                />
-              ))}
+              <div className="flex flex-col gap-8 w-full">
+                {evalPage?.figures.map((figure) => (
+                  <FullWidthChart
+                    key={figure.filename}
+                    filename={figure.filename}
+                    figure={figure}
+                  />
+                ))}
+              </div>
 
               <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-red-800 text-sm leading-relaxed space-y-2">
                 <p>

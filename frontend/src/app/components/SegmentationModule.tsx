@@ -13,8 +13,58 @@ import { PredictSegmentModal } from './PredictSegmentModal';
 import {
   useClusterEda, useClusterSummary, useMetadata, usePageContent,
 } from '@/lib/hooks';
+import type { PageFigure } from '@/lib/api';
 
 type Tab = 'CONTEXT' | 'EDA' | 'PREPROCESSING' | 'MODELING' | 'INTERPRETATION';
+
+const PLOTLY_CHART_HEIGHTS: Record<string, number> = {
+  'ex2_distributions.png': 480,
+  'ex2_correlation.png': 560,
+  'ex2_categorical.png': 520,
+  'ex2_spending_channels.png': 480,
+  'ex2_campaign_response.png': 440,
+  'ex2_kmeans_selection.png': 520,
+  'ex2_pca_scree.png': 440,
+  'ex2_dendrogram.png': 560,
+  'ex2_clustering_comparison.png': 560,
+  'ex2_cluster_profiles.png': 520,
+  'ex2_radar_profiles.png': 520,
+};
+
+function plotlyHeight(filename: string): number {
+  return PLOTLY_CHART_HEIGHTS[filename] ?? 480;
+}
+
+function FullWidthChart({
+  filename,
+  figure,
+}: {
+  filename: string;
+  figure?: PageFigure;
+}) {
+  return (
+    <div className="w-full">
+      <ChartPanel
+        filename={filename}
+        title={figure?.title}
+        caption={figure?.caption}
+        height={plotlyHeight(filename)}
+        className="w-full"
+      />
+    </div>
+  );
+}
+
+function FullWidthChartList({ figures }: { figures: PageFigure[] }) {
+  if (!figures.length) return null;
+  return (
+    <div className="flex flex-col gap-8 w-full">
+      {figures.map((figure) => (
+        <FullWidthChart key={figure.filename} filename={figure.filename} figure={figure} />
+      ))}
+    </div>
+  );
+}
 
 const CLUSTER_COLORS: Record<string, string> = {
   Premium: '#8b5cf6',
@@ -152,7 +202,7 @@ export function SegmentationModule() {
             <motion.div key="eda" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex flex-col gap-6">
               <InsightsList title="Analyses exploratoires" insights={edaPage?.insights ?? []} />
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl">
                 <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                   <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">Distribution des revenus</h3>
                   {clusterEda?.income_distribution?.length ? (
@@ -202,13 +252,7 @@ export function SegmentationModule() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ChartPanel filename="ex2_distributions.png" title="Distributions" caption="Revenus, âge, dépenses" />
-                <ChartPanel filename="ex2_correlation.png" title="Matrice de corrélation" caption="Liens entre variables numériques" height={520} />
-                <ChartPanel filename="ex2_categorical.png" title="Variables catégorielles" caption="Éducation, statut marital, canaux" />
-                <ChartPanel filename="ex2_spending_channels.png" title="Canaux de dépense" caption="Répartition MntWines, MntMeat…" />
-                <ChartPanel filename="ex2_campaign_response.png" title="Réponse campagnes" caption="Acceptation des promotions" />
-              </div>
+              <FullWidthChartList figures={edaPage?.figures ?? []} />
             </motion.div>
           )}
 
@@ -261,12 +305,7 @@ export function SegmentationModule() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ChartPanel filename="ex2_kmeans_selection.png" title="Sélection de k" caption={modelPage?.figures[0]?.caption} />
-                <ChartPanel filename="ex2_pca_scree.png" title="Scree plot PCA" caption="Variance expliquée" />
-                <ChartPanel filename="ex2_dendrogram.png" title="Dendrogramme" caption="Clustering hiérarchique" />
-                <ChartPanel filename="ex2_clustering_comparison.png" title="Comparaison algorithmes" caption="K-Means vs DBSCAN vs GMM" height={520} />
-              </div>
+              <FullWidthChartList figures={modelPage?.figures ?? []} />
             </motion.div>
           )}
 
@@ -300,10 +339,7 @@ export function SegmentationModule() {
 
               <InsightsList title="Évaluation des clusters" insights={evalPage?.insights ?? []} variant="indigo" />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ChartPanel filename="ex2_cluster_profiles.png" title="Profils par cluster" caption="Centroïdes normalisés" />
-                <ChartPanel filename="ex2_radar_profiles.png" title="Radar des profils" caption="Comparaison multi-dimensions" />
-              </div>
+              <FullWidthChartList figures={interpretPage?.figures ?? []} />
 
               <InsightsList title="Recommandations business" insights={interpretPage?.insights ?? []} />
 
