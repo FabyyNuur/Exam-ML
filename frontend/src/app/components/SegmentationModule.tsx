@@ -23,7 +23,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 import { ApiStatusBadge } from "./ApiStatusBadge";
-import { ChartPanel } from "./ChartPanel";
+import { ChartWithInterpretation } from "./ChartWithInterpretation";
 import { InsightsList } from "./InsightsList";
 import { MetricsCards } from "./MetricsCards";
 import { PredictSegmentModal } from "./PredictSegmentModal";
@@ -55,59 +55,6 @@ function plotlyHeight(filename: string): number {
   return PLOTLY_CHART_HEIGHTS[filename] ?? 480;
 }
 
-function InterpretationBlock({
-  text,
-  className = "",
-}: {
-  text: string;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`bg-indigo-50 border border-indigo-100 px-4 py-3 rounded-lg text-sm text-indigo-900 leading-relaxed ${className}`}
-    >
-      <strong>Interprétation :</strong> {text}
-    </div>
-  );
-}
-
-function ChartWithInterpretation({
-  filename,
-  figure,
-  height = 480,
-}: {
-  filename: string;
-  figure?: PageFigure;
-  height?: number;
-}) {
-  const hasInterpretation = Boolean(figure?.interpretation);
-
-  const chart = (
-    <ChartPanel
-      filename={filename}
-      title={figure?.title}
-      caption={figure?.caption}
-      height={height}
-      fitContent={hasInterpretation}
-      className={hasInterpretation ? "shrink-0" : "w-full"}
-    />
-  );
-
-  if (!hasInterpretation) {
-    return chart;
-  }
-
-  return (
-    <div className="flex flex-col lg:flex-row gap-4 items-stretch w-full">
-      {chart}
-      <InterpretationBlock
-        text={figure!.interpretation!}
-        className="lg:flex-1 lg:min-w-[260px] flex items-center"
-      />
-    </div>
-  );
-}
-
 function FullWidthChartList({ figures }: { figures: PageFigure[] }) {
   if (!figures.length) return null;
   return (
@@ -118,6 +65,7 @@ function FullWidthChartList({ figures }: { figures: PageFigure[] }) {
           filename={figure.filename}
           figure={figure}
           height={plotlyHeight(figure.filename)}
+          variant="indigo"
         />
       ))}
     </div>
