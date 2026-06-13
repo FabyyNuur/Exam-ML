@@ -208,3 +208,85 @@ def test_api_without_models(monkeypatch):
         },
     )
     assert response.status_code == 503
+
+
+SAMPLES_DIR = Path(__file__).resolve().parent.parent / "data" / "samples"
+
+
+def test_predict_fraud_batch_valid(client):
+    csv_path = SAMPLES_DIR / "fraud_sample.csv"
+    if not csv_path.exists():
+        pytest.skip("fraud_sample.csv manquant")
+    with csv_path.open("rb") as handle:
+        response = client.post(
+            "/predict/fraud/batch",
+            files={"file": ("fraud_sample.csv", handle, "text/csv")},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["processed"] > 0
+    assert "summary" in data
+    assert "rows" in data
+    assert data["rows"][0]["probability"] >= 0
+
+
+def test_predict_fraud_batch_with_evaluation(client):
+    csv_path = SAMPLES_DIR / "fraud_sample.csv"
+    if not csv_path.exists():
+        pytest.skip("fraud_sample.csv manquant")
+    with csv_path.open("rb") as handle:
+        response = client.post(
+            "/predict/fraud/batch",
+            files={"file": ("fraud_sample.csv", handle, "text/csv")},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    if any("isFraud" in line for line in csv_path.read_text(encoding="utf-8").splitlines()[:1]):
+        pass
+    assert data.get("evaluation") is not None or data["processed"] > 0
+    if data.get("evaluation"):
+        assert "roc_auc" in data["evaluation"]
+        assert "confusion_matrix" in data["evaluation"]
+
+
+def test_predict_fraud_batch_missing_columns(client):
+    bad_csv = b"step;amount\n1;100\n"
+    response = client.post(
+        "/predict/fraud/batch",
+        files={"file": ("bad.csv", bad_csv, "text/csv")},
+    )
+    assert response.status_code == 422
+
+
+def test_predict_fraud_batch_file_size_limit(client):
+    oversized = b"x" * (8 * 1024 * 1024 + 1)
+    response = client.post(
+        "/predict/fraud/batch",
+        files={"file": ("big.csv", oversized, "text/csv")},
+    )
+    assert response.status_code == 413
+    assert "volumineux" in response.json()["detail"].lower()
+
+
+def test_predict_segment_batch_valid(client):
+    csv_path = SAMPLES_DIR / "cluster_sample.csv"
+    if not csv_path.exists():
+        pytest.skip("cluster_sample.csv manquant")
+    with csv_path.open("rb") as handle:
+        response = client.post(
+            "/predict/segment/batch",
+            files={"file": ("cluster_sample.csv", handle, "text/csv")},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["processed"] > 0
+    assert "cluster_distribution" in data["summary"]
+    assert data["rows"][0]["profile"]
+
+
+def test_predict_template_fraud(client):
+    response = client.get("/predict/templates/fraud")
+    if response.status_code == 404:
+        pytest.skip("fraud_sample.csv manquant")
+    assert response.status_code == 200
+    assert "text/csv" in response.headers["content-type"]

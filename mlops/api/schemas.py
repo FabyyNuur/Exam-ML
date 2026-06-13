@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 
 TransactionType = Literal["PAYMENT", "TRANSFER", "CASH_OUT", "DEBIT", "CASH_IN"]
 
+MAX_UPLOAD_BYTES = 8 * 1024 * 1024
+
 
 class FraudRequest(BaseModel):
     step: int = Field(..., ge=1, description="Unité temporelle")
@@ -25,6 +27,34 @@ class FraudResponse(BaseModel):
     risk_level: str
 
 
+class FraudBatchRow(FraudResponse):
+    row_index: int
+
+
+class ConfusionMatrix(BaseModel):
+    tp: int
+    fp: int
+    tn: int
+    fn: int
+
+
+class FraudBatchEvaluation(BaseModel):
+    roc_auc: float
+    precision: float
+    recall: float
+    f1: float
+    confusion_matrix: ConfusionMatrix
+
+
+class FraudBatchResponse(BaseModel):
+    total: int
+    processed: int
+    summary: dict
+    evaluation: Optional[FraudBatchEvaluation] = None
+    rows: list[FraudBatchRow]
+    errors: list[str]
+
+
 class CustomerRequest(BaseModel):
     income: float = Field(..., ge=0)
     age: int = Field(..., ge=18, le=100)
@@ -39,6 +69,18 @@ class CustomerResponse(BaseModel):
     cluster_id: int
     profile: str
     description: str
+
+
+class SegmentBatchRow(CustomerResponse):
+    row_index: int
+
+
+class SegmentBatchResponse(BaseModel):
+    total: int
+    processed: int
+    summary: dict
+    rows: list[SegmentBatchRow]
+    errors: list[str]
 
 
 class HealthResponse(BaseModel):

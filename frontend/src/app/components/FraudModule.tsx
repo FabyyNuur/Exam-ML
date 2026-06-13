@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   BarChart,
@@ -33,6 +33,12 @@ import {
   useMetadata,
   usePageContent,
 } from "@/lib/hooks";
+import {
+  interpretFraudByType,
+  interpretFraudClassBalance,
+  interpretFraudCvRoc,
+  interpretFraudTestMetrics,
+} from "@/lib/chartInterpretations";
 import type { PageContent, PageFigure } from "@/lib/api";
 
 type Tab = "CONTEXT" | "EDA" | "PREPROCESSING" | "IMBALANCE" | "MODELING";
@@ -54,18 +60,6 @@ const PLOTLY_CHART_HEIGHTS: Record<string, number> = {
 function plotlyHeight(filename: string): number {
   return PLOTLY_CHART_HEIGHTS[filename] ?? 480;
 }
-
-const RECHARTS_INTERPRETATIONS = {
-  fraudByType:
-    "Les fraudes se concentrent principalement sur les opérations de type TRANSFER et CASH_OUT, " +
-    "qui représentent les canaux les plus exposés aux détournements de fonds.",
-  cvRoc:
-    "La validation croisée confirme que XGBoost obtient le ROC-AUC le plus élevé parmi les quatre modèles testés, " +
-    "avec une faible variance entre les folds, signe d'une bonne généralisation.",
-  testMetrics:
-    "Sur le jeu de test, le recall atteint environ 97 % grâce au seuil abaissé à 30 %, tandis que la precision " +
-    "et le F1 restent plus modérés en raison du fort déséquilibre des classes.",
-} as const;
 
 function InterpretationBlock({
   text,
@@ -132,6 +126,16 @@ export function FraudModule() {
         { name: "Rappel", value: (fraudMeta.recall * 100).toFixed(1) },
       ]
     : [];
+
+  const chartInterpretations = useMemo(
+    () => ({
+      classBalance: interpretFraudClassBalance(eda),
+      fraudByType: interpretFraudByType(eda),
+      cvRoc: interpretFraudCvRoc(modelsData?.models),
+      testMetrics: interpretFraudTestMetrics(fraudMeta),
+    }),
+    [eda, modelsData, fraudMeta],
+  );
 
   return (
     <div className="w-full h-full flex flex-col gap-6 p-6 relative z-10">
@@ -283,15 +287,7 @@ export function FraudModule() {
                       </p>
                     )}
                   </div>
-                  {getFigure(edaPage, "ex1_class_distribution.png")
-                    ?.interpretation && (
-                    <InterpretationBlock
-                      text={
-                        getFigure(edaPage, "ex1_class_distribution.png")!
-                          .interpretation!
-                      }
-                    />
-                  )}
+                  <InterpretationBlock text={chartInterpretations.classBalance} />
                 </div>
                 <div className="flex flex-col gap-3">
                   <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
@@ -335,9 +331,7 @@ export function FraudModule() {
                       </p>
                     )}
                   </div>
-                  <InterpretationBlock
-                    text={RECHARTS_INTERPRETATIONS.fraudByType}
-                  />
+                  <InterpretationBlock text={chartInterpretations.fraudByType} />
                 </div>
               </div>
 
@@ -482,9 +476,7 @@ export function FraudModule() {
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                    <InterpretationBlock
-                      text={RECHARTS_INTERPRETATIONS.cvRoc}
-                    />
+                    <InterpretationBlock text={chartInterpretations.cvRoc} />
                   </div>
                 ) : null}
 
@@ -515,9 +507,7 @@ export function FraudModule() {
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                    <InterpretationBlock
-                      text={RECHARTS_INTERPRETATIONS.testMetrics}
-                    />
+                    <InterpretationBlock text={chartInterpretations.testMetrics} />
                   </div>
                 )}
               </div>

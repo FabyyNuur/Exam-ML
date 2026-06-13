@@ -202,6 +202,19 @@ PAGES = [
         "metadata_key": "fraud",
     },
     {
+        "id": "ex2_context",
+        "label": "Ex2 — Contexte",
+        "section": "Exercice 2 · Segmentation",
+        "phase": "eda",
+        "title": "Objectifs marketing",
+        "subtitle": "Analyse exploratoire — data_cluster.csv (~2 200 clients)",
+        "insights": [
+            "Envoyer la même promotion à l'ensemble de la base revient à supposer que tous les clients réagissent de la même façon, or les revenus, les canaux d'achat et la sensibilité aux offres varient fortement d'un profil à l'autre.",
+            "La segmentation par clustering répond à une question centrale : quels groupes partagent un comportement comparable, et comment adapter le message, le canal et l'offre à chacun pour maximiser le retour sur investissement plutôt que diluer le budget en campagnes génériques ?",
+            "Nous croisons démographie, dépenses par catégorie, récence d'achat et historique de réponse aux campagnes, car ce sont ces signaux comportementaux qui permettent de distinguer des segments réellement actionnables par les équipes marketing.",],
+        "figures": [],
+    },
+    {
         "id": "ex2_eda",
         "label": "Ex2 — EDA",
         "section": "Exercice 2 · Segmentation",
@@ -209,7 +222,7 @@ PAGES = [
         "title": "Exploration des clients",
         "subtitle": "Analyse exploratoire — data_cluster.csv (~2 200 clients)",
         "insights": [
-            "Le portefeuille compte environ 2 200 clients décrits par l'âge, le revenu, les dépenses par catégorie, la récence d'achat et l'historique de réponse aux campagnes — une richesse suffisante pour dépasser une segmentation purement démographique.",
+            "Le portefeuille compte environ 2 200 clients décrits par l'âge, le revenu, les dépenses par catégorie, la récence d'achat et l'historique de réponse aux campagnes, une richesse suffisante pour dépasser une segmentation purement démographique.",
             "Les revenus extrêmes (> 600 000 €) et les modalités aberrantes du statut marital (YOLO, Absurd) signalent des données à nettoyer avant clustering, faute de quoi les centroïdes seraient tirés par quelques valeurs atypiques.",
             "Les dépenses par catégorie (vins, viandes, poissons…) sont fortement corrélées entre elles : cette redondance confirme qu'un indice de dépense globale ou une PCA pourra résumer l'essentiel du comportement d'achat.",
             "La réponse aux campagnes n'est pas uniforme — une part significative des clients refuse les promotions — ce qui pose directement la question du ciblage : à qui envoyer une offre, et à qui proposer plutôt de la fidélisation sans discount ?",
@@ -226,8 +239,9 @@ PAGES = [
                 "ex2_interactive_explorer.png",
                 "Exploration interactive",
                 "Comparaisons revenu, âge, dépenses",
-                "Le menu déroulant permet de tester plusieurs hypothèses (revenu vs dépenses, âge vs revenu, web vs magasin) sans refaire les graphiques. "
-                "On observe notamment que les clients Premium se détachent sur le couple revenu–dépenses, tandis que le cluster Digital se distingue par les achats web.",
+                "Le couple revenu–dépenses (r ≈ 0,79) sépare nettement Premium (~1 125 € de panier, ~69 500 € de revenu) "
+                "de Digital (~133 €, ~36 000 €). L'âge ou la récence seuls ne suffisent pas : ce sont le revenu et le mix "
+                "web/magasin qui structurent les segments actionnables.",
             ),
             (
                 "ex2_correlation.png",
@@ -327,7 +341,7 @@ PAGES = [
         "title": "Profils clients & recommandations",
         "subtitle": "Interprétation métier des clusters",
         "insights": [
-            "Avec une Silhouette d'environ 0,32 et un Davies-Bouldin de 1,29, la séparation reste modeste au regard des standards académiques — mais elle est suffisante pour orienter des campagnes marketing, où l'enjeu est l'actionnabilité plutôt que la perfection statistique.",
+            "Avec une Silhouette d'environ 0,32 et un Davies-Bouldin de 1,29, la séparation reste modeste au regard des standards académiques, mais elle est suffisante pour orienter des campagnes marketing, où l'enjeu est l'actionnabilité plutôt que la perfection statistique.",
             "Les centroïdes normalisés montrent que le revenu et la dépense totale discriminent fortement le cluster Premium, tandis que le nombre d'achats web et la récence caractérisent le cluster Digital.",
             "La lecture des profils invite à se demander, pour chaque segment, quel canal privilégier et quel type d'offre maximisera la conversion sans cannibaliser la marge.",
         ],
@@ -357,25 +371,26 @@ PAGES = [
         "title": "Profils clients & recommandations business",
         "subtitle": "Actions marketing par segment — synthèse stratégique",
         "insights": [
-            "Le segment Premium mérite un programme de fidélité haut de gamme et du cross-sell sur les catégories à forte marge, plutôt que des promotions agressives qui risqueraient d'éroder la valeur perçue.",
-            "Le segment Digital répond mieux aux campagnes e-mail, push et offres limitées sur le canal web — la question clé est de maintenir l'engagement avant que la récence ne se dégrade.",
-            "Plutôt qu'un envoi massif, chaque campagne doit être calibrée sur le profil cluster : même budget, meilleur ciblage, moins de sollicitations inutiles.",
-            "En production, les segments devront être recalculés régulièrement et la Silhouette suivie dans le temps pour détecter une dérive comportementale avant qu'elle n'invalide les recommandations.",
+            "Deux profils ressortent avec k=2 (Silhouette ≈ 0,32) : Premium (902 clients, 41 %) concentre revenu (~71 k€) et panier (~1 233 €) ; Digital (1 313 clients, 59 %) est le segment masse (~39 k€, ~178 € de panier, soit ≈ 7× moins).",
+            "Premium achète davantage partout (vins ~610 €, viandes ~357 €, 5,8 achats web) — le libellé « Digital » ne signifie pas « plus d'achats en ligne » : ce cluster achète moins sur tous les canaux (2,9 web, 3,9 magasin) mais a plus d'enfants (1,3 vs 0,5).",
+            "La récence d'achat (~49 j) et l'âge (~54–57 ans) ne séparent pas les clusters : le levier discriminant est le couple revenu + dépense totale.",
+            "Actions : Premium → fidélité haut de gamme, cross-sell vins/viandes, pas de promos agressives ; Digital → offres accessibles ciblées, sans envoi massif de coupons.",
         ],
         "figures": [
             (
                 "ex2_cluster_profiles.png",
                 "Profils par cluster",
                 "Centroïdes normalisés",
-                "Les centroïdes traduisent en langage métier ce que le modèle a appris : des clients à fort pouvoir d'achat d'un côté, des acheteurs digitaux actifs de l'autre. "
-                "Chaque barre est un levier d'action — revenu, dépense, canal — pour construire une offre cohérente avec le comportement observé.",
+                "Premium surperforme sur Income (~71 k€ vs ~39 k€) et TotalSpend (~1 233 € vs ~178 €). "
+                "Digital se distingue surtout par un panier faible et plus d'enfants (1,3 vs 0,5) — pas par davantage d'achats web (2,9 vs 5,8). "
+                "C'est la dépense globale qui structure le découpage, pas le canal d'achat.",
             ),
             (
                 "ex2_radar_profiles.png",
                 "Radar des profils",
                 "Comparaison multi-dimensions",
-                "Le radar synthétise l'écart entre profils sur l'ensemble des dimensions : il permet aux équipes marketing de valider en un coup d'œil "
-                "que les segments sont suffisamment distincts pour justifier des parcours clients différenciés.",
+                "Le radar montre Premium à 1,0 sur revenu, dépenses et fréquence d'achat, Digital proche de 0 sur ces axes "
+                "mais plus élevé sur le nombre d'enfants. L'écart multi-dimensionnel confirme que deux parcours marketing distincts sont justifiés.",
             ),
         ],
         "metadata_key": "cluster",

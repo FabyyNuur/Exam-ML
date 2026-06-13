@@ -132,8 +132,11 @@ Interface : http://localhost:4173
 |---|---|
 | `GET /health` | Statut des modèles |
 | `GET /metadata` | Métriques fraude & cluster |
-| `POST /predict/fraud` | Scoring transaction |
-| `POST /predict/segment` | Segmentation client |
+| `POST /predict/fraud` | Scoring transaction (saisie unitaire) |
+| `POST /predict/fraud/batch` | Scoring batch via upload CSV |
+| `POST /predict/segment` | Segmentation client (saisie unitaire) |
+| `POST /predict/segment/batch` | Segmentation batch via upload CSV |
+| `GET /predict/templates/{kind}` | Téléchargement d'un CSV modèle (`fraud` ou `segment`) |
 | `GET /figures/{filename}` | Figures PNG |
 | `GET /content/pages` | Contenu pédagogique |
 | `GET /analytics/fraud/eda` | Stats EDA fraude |
@@ -144,12 +147,28 @@ Interface : http://localhost:4173
 | `GET /analytics/charts` | Liste des graphiques Plotly disponibles |
 | `GET /analytics/charts/{id}` | Figure Plotly JSON (ex. `ex2_correlation`) |
 
+### Tester les modèles (dashboard)
+
+Dans les modules **Fraude** et **Segmentation**, le bouton **TESTER LE MODÈLE** ouvre une modale avec deux onglets :
+
+1. **Upload CSV** — déposez un fichier (max 8 Mo) pour scorer en batch.
+2. **Saisie manuelle** — test unitaire via formulaire.
+
+**Formats CSV attendus :**
+
+| Exercice | Colonnes requises | Évaluation auto |
+|---|---|---|
+| Fraude | `step`, `type`, `amount`, `oldbalanceOrg`, `newbalanceOrig`, `oldbalanceDest`, `newbalanceDest` | Si `isFraud` présent → ROC-AUC, F1, matrice de confusion |
+| Segmentation | Format brut client (`Year_Birth`, `Income`, `Kidhome`, `Teenhome`, `Mnt*`, `NumWebPurchases`, `NumStorePurchases`, `Recency`, …) | — |
+
+Modèles téléchargeables : `GET /predict/templates/fraud` et `GET /predict/templates/segment` (fichiers dans `data/samples/`).
+
 ## Modules du dashboard
 
 | Module | Contenu |
 |---|---|
-| Fraude | EDA, prétraitement, modélisation XGBoost, SHAP, test live |
-| Segmentation | EDA clients, K-Means k=2, profils Premium/Digital |
+| Fraude | EDA, prétraitement, modélisation XGBoost, SHAP, test CSV + saisie manuelle |
+| Segmentation | EDA clients, K-Means k=2, profils Premium/Digital, test CSV + saisie manuelle |
 | MLOps | Pipeline, déploiement, monitoring |
 | Livrables | Structure du dépôt et documentation |
 

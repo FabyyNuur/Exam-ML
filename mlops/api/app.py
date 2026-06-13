@@ -6,19 +6,12 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from mlops.api.inference import ModelRegistry
-from mlops.api.routes import analytics, content, figures
-from mlops.api.schemas import (
-    CustomerRequest,
-    CustomerResponse,
-    FraudRequest,
-    FraudResponse,
-    HealthResponse,
-    MetadataResponse,
-)
+from mlops.api.routes import analytics, content, figures, predict
+from mlops.api.schemas import HealthResponse, MetadataResponse
 
 MODELS_DIR = Path(__file__).parent.parent.parent / "models"
 registry = ModelRegistry(models_dir=MODELS_DIR)
@@ -55,6 +48,7 @@ app.add_middleware(
 app.include_router(figures.router)
 app.include_router(content.router)
 app.include_router(analytics.router)
+predict.register_predict_routes(app, registry)
 
 
 @app.get("/api")
@@ -65,7 +59,10 @@ def api_root():
             "/health",
             "/metadata",
             "/predict/fraud",
+            "/predict/fraud/batch",
             "/predict/segment",
+            "/predict/segment/batch",
+            "/predict/templates/{kind}",
             "/figures/{filename}",
             "/content/pages",
             "/analytics/fraud/eda",
@@ -93,19 +90,3 @@ def metadata():
         fraud=registry.metadata.get("fraud"),
         cluster=registry.metadata.get("cluster"),
     )
-
-
-@app.post("/predict/fraud", response_model=FraudResponse)
-def predict_fraud(request: FraudRequest):
-    try:
-        return registry.predict_fraud(request)
-    except RuntimeError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-
-@app.post("/predict/segment", response_model=CustomerResponse)
-def predict_segment(request: CustomerRequest):
-    try:
-        return registry.predict_segment(request)
-    except RuntimeError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc

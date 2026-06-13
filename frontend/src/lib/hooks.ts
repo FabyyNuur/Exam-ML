@@ -5,6 +5,7 @@ import {
   ClusterEdaAnalytics,
   CustomerRequest,
   CustomerResponse,
+  FraudBatchResponse,
   FraudEdaAnalytics,
   FraudModelMetric,
   FraudSmoteAnalytics,
@@ -15,6 +16,7 @@ import {
   PageContent,
   PlotlyFigurePayload,
   PagesResponse,
+  SegmentBatchResponse,
 } from './api';
 
 function useFetch<T>(fetcher: () => Promise<T>) {
@@ -115,6 +117,54 @@ export function usePredictSegment() {
       return res;
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Erreur de prédiction';
+      setError(msg);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { predict, loading, error, result, reset: () => setResult(null) };
+}
+
+export function usePredictFraudBatch() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<FraudBatchResponse | null>(null);
+
+  const predict = async (file: File) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.predictFraudBatch(file);
+      setResult(res);
+      return res;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Erreur de prédiction batch';
+      setError(msg);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { predict, loading, error, result, reset: () => setResult(null) };
+}
+
+export function usePredictSegmentBatch() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<SegmentBatchResponse | null>(null);
+
+  const predict = async (file: File) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.predictSegmentBatch(file);
+      setResult(res);
+      return res;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Erreur de prédiction batch';
       setError(msg);
       throw e;
     } finally {

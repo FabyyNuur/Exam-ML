@@ -165,6 +165,163 @@ function RangeField({
   );
 }
 
+function pearsonCorrelation(
+  records: ClusterEdaRecord[],
+  x: NumericKey,
+  y: NumericKey,
+): number | null {
+  if (records.length < 4) return null;
+  const xs = records.map((r) => Number(r[x] ?? 0));
+  const ys = records.map((r) => Number(r[y] ?? 0));
+  const mx = xs.reduce((a, b) => a + b, 0) / xs.length;
+  const my = ys.reduce((a, b) => a + b, 0) / ys.length;
+  let num = 0;
+  let dx = 0;
+  let dy = 0;
+  for (let i = 0; i < xs.length; i += 1) {
+    const a = xs[i] - mx;
+    const b = ys[i] - my;
+    num += a * b;
+    dx += a * a;
+    dy += b * b;
+  }
+  const den = Math.sqrt(dx * dy);
+  return den ? num / den : null;
+}
+
+function meanField(records: ClusterEdaRecord[], key: NumericKey): number {
+  if (!records.length) return 0;
+  return records.reduce((sum, r) => sum + Number(r[key] ?? 0), 0) / records.length;
+}
+
+const GROUP_BY_LABELS: Record<GroupBy, string> = {
+  age_bin: "tranche d'âge",
+  income_bin: "tranche de revenu",
+  education: "niveau d'éducation",
+  cluster: "cluster",
+};
+
+function buildExplorerInterpretation({
+  filtered,
+  totalCount,
+  xKey,
+  yKey,
+  colorBy,
+  clusterFilter,
+  educationFilter,
+  responseFilter,
+  comparisonData,
+  compareMetric,
+  groupBy,
+  metricLabel,
+}: {
+  filtered: ClusterEdaRecord[];
+  totalCount: number;
+  xKey: NumericKey;
+  yKey: NumericKey;
+  colorBy: ColorBy;
+  clusterFilter: string;
+  educationFilter: string;
+  responseFilter: string;
+  comparisonData: { group: string; avg: number; count: number }[];
+  compareMetric: NumericKey;
+  groupBy: GroupBy;
+  metricLabel: string;
+}): string {
+  const r = pearsonCorrelation(filtered, xKey, yKey);
+  const rText = r != null ? ` (r ≈ ${r.toFixed(2)})` : "";
+  const premium = filtered.filter((row) => row.cluster === "Premium");
+  const digital = filtered.filter((row) => row.cluster === "Digital");
+  const premiumSpend = Math.round(meanField(premium, "total_spend"));
+  const digitalSpend = Math.round(meanField(digital, "total_spend"));
+  const premiumIncome = Math.round(meanField(premium, "income"));
+  const digitalIncome = Math.round(meanField(digital, "income"));
+
+  let main = "";
+
+  if (xKey === "income" && yKey === "total_spend") {
+    if (premium.length > 0 && digital.length > 0) {
+      main =
+        `Le revenu structure presque toute la dépense${rText} : le segment Premium affiche ` +
+        `${premiumSpend.toLocaleString("fr-FR")} € de panier moyen pour ${premiumIncome.toLocaleString("fr-FR")} € de revenu, ` +
+        `contre ${digitalSpend.toLocaleString("fr-FR")} € pour ${digitalIncome.toLocaleString("fr-FR")} € chez Digital — ` +
+        `un écart d'environ ${Math.round(premiumSpend / Math.max(digitalSpend, 1))}× qui préfigure les deux clusters retenus.`;
+    } else {
+      main =
+        `Revenu et dépenses totales progressent ensemble${rText} : la clientèle la plus aisée concentre ` +
+        `l'essentiel du chiffre d'affaires, ce qui justifie un segment Premium distinct des petits paniers.`;
+    }
+  } else if (xKey === "age" && yKey === "total_spend") {
+    main =
+      `L'âge n'explique que marginalement les dépenses${rText} : Premium (≈ ${Math.round(meanField(premium, "age"))} ans) ` +
+      `et Digital (≈ ${Math.round(meanField(digital, "age"))} ans) ont des profils d'âge proches, ` +
+      `tandis que le montant dépensé (${premiumSpend.toLocaleString("fr-FR")} € vs ${digitalSpend.toLocaleString("fr-FR")} €) ` +
+      `se sépare surtout par le revenu, pas par la génération.`;
+  } else if (xKey === "age" && yKey === "income") {
+    main =
+      `Revenu et âge ne sont que faiblement corrélés${rText} : les clients les plus aisés ne sont pas systématiquement ` +
+      `les plus jeunes (Premium ≈ ${premiumIncome.toLocaleString("fr-FR")} € à ${Math.round(meanField(premium, "age"))} ans). ` +
+      `La segmentation ne peut donc pas reposer sur l'âge seul.`;
+  } else if (xKey === "web_purchases" && yKey === "store_purchases") {
+    const pWeb = meanField(premium, "web_purchases").toFixed(1);
+    const pStore = meanField(premium, "store_purchases").toFixed(1);
+    const dWeb = meanField(digital, "web_purchases").toFixed(1);
+    const dStore = meanField(digital, "store_purchases").toFixed(1);
+    main =
+      `Achats web et magasin évoluent ensemble${rText}, mais Premium cumule davantage de passages ` +
+      `(${pWeb} web / ${pStore} magasin en moyenne) que Digital (${dWeb} / ${dStore}) : le canal dominant distingue ` +
+      `mieux qu'un canal unique pris isolément.`;
+  } else if (xKey === "recency" && yKey === "total_spend") {
+    main =
+      `La récence d'achat (≈ ${Math.round(meanField(filtered, "recency"))} jours) ne prédit pas le niveau de dépense${rText} : ` +
+      `Premium et Digital partagent la même récence moyenne, alors que leurs paniers diffèrent fortement ` +
+        `(${premiumSpend.toLocaleString("fr-FR")} € vs ${digitalSpend.toLocaleString("fr-FR")} €). ` +
+      `Une campagne de réactivation ciblera plutôt le montant dépensé que la seule date du dernier achat.`;
+  } else {
+    main =
+      `Sur les ${filtered.length} clients affichés, ${xKey} et ${yKey} présentent une association ` +
+      `${r != null && Math.abs(r) >= 0.4 ? "marquée" : "modérée"}${rText}.`;
+  }
+
+  if (colorBy === "response" && premium.length + digital.length > 0) {
+    const accPremium =
+      premium.length > 0
+        ? Math.round((premium.filter((row) => row.response === 1).length / premium.length) * 100)
+        : null;
+    const accDigital =
+      digital.length > 0
+        ? Math.round((digital.filter((row) => row.response === 1).length / digital.length) * 100)
+        : null;
+    if (accPremium != null && accDigital != null) {
+      main +=
+        ` Côté campagnes, le taux d'acceptation atteint ${accPremium} % chez Premium contre ${accDigital} % chez Digital — ` +
+        `argument pour des offres différenciées plutôt qu'un envoi massif.`;
+    }
+  }
+
+  if (comparisonData.length >= 2) {
+    const top = comparisonData[0];
+    const bottom = comparisonData[comparisonData.length - 1];
+    const ratio = bottom.avg > 0 ? (top.avg / bottom.avg).toFixed(1) : "—";
+    main +=
+      ` Par ${GROUP_BY_LABELS[groupBy]}, ${top.group} domine sur ${metricLabel.toLowerCase()} ` +
+      `(${top.avg.toLocaleString("fr-FR")} €, n = ${top.count}), soit environ ${ratio}× plus que ${bottom.group} ` +
+      `(${bottom.avg.toLocaleString("fr-FR")} €).`;
+  }
+
+  const filterParts: string[] = [];
+  if (clusterFilter !== "all") filterParts.push(`cluster ${clusterFilter}`);
+  if (educationFilter !== "all") filterParts.push(`diplôme ${educationFilter}`);
+  if (responseFilter !== "all") {
+    filterParts.push(responseFilter === "1" ? "acceptation campagne" : "refus campagne");
+  }
+  if (filtered.length < totalCount * 0.85 && filterParts.length > 0) {
+    return `Sous-ensemble filtré (${filtered.length}/${totalCount} clients, ${filterParts.join(", ")}) : ${main}`;
+  }
+
+  return main;
+}
+
 export function ClusterInteractiveExplorer({
   data,
 }: {
@@ -261,6 +418,38 @@ export function ClusterInteractiveExplorer({
   const xLabel = numericVars.find((v) => v.key === xKey)?.label ?? xKey;
   const yLabel = numericVars.find((v) => v.key === yKey)?.label ?? yKey;
   const metricLabel = numericVars.find((v) => v.key === compareMetric)?.label ?? compareMetric;
+
+  const interpretation = useMemo(
+    () =>
+      buildExplorerInterpretation({
+        filtered,
+        totalCount: records.length,
+        xKey,
+        yKey,
+        colorBy,
+        clusterFilter: cluster,
+        educationFilter: education,
+        responseFilter: response,
+        comparisonData,
+        compareMetric,
+        groupBy,
+        metricLabel,
+      }),
+    [
+      filtered,
+      records.length,
+      xKey,
+      yKey,
+      colorBy,
+      cluster,
+      education,
+      response,
+      comparisonData,
+      compareMetric,
+      groupBy,
+      metricLabel,
+    ],
+  );
 
   if (!records.length) {
     return (
@@ -470,14 +659,7 @@ export function ClusterInteractiveExplorer({
       </div>
 
       <div className="bg-indigo-50 border border-indigo-100 px-4 py-3 rounded-lg text-sm text-indigo-900 leading-relaxed">
-        <strong>Interprétation :</strong>{" "}
-        {filtered.length < records.length * 0.3
-          ? "Les filtres actuels isolent un sous-ensemble restreint — vérifiez si le pattern observé (relation revenu/dépenses, canal dominant) se généralise sur toute la base."
-          : `Sur cet échantillon, la relation entre ${xLabel.toLowerCase()} et ${yLabel.toLowerCase()} ${
-              scatterGroups.length > 1
-                ? "diffère selon le cluster ou le profil sélectionné"
-                : "mérite d'être confrontée à une tranche d'âge ou de revenu plus ciblée"
-            } : c'est précisément ce type de question que la segmentation doit permettre de trancher avant de lancer une campagne.`}
+        <strong>Interprétation :</strong> {interpretation}
       </div>
     </div>
   );

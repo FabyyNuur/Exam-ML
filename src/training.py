@@ -28,37 +28,12 @@ from src.analytics_export import (
     export_fraud_models,
 )
 from src.charts.export import export_all_charts
-from src.constants import CLUSTER_API_COLUMNS, FRAUD_FEATURE_COLUMNS, FRAUD_THRESHOLD, TYPE_MAP
+from src.constants import CLUSTER_API_COLUMNS, FRAUD_THRESHOLD
+from src.inference_prep import prepare_cluster_matrix, prepare_fraud_matrix
 from src.models import FRAUD_MODELS, cross_validate_models, log_model_mlflow, save_model
-from src.preprocessing import (
-    clean_customer_data,
-    engineer_customer_features,
-    engineer_fraud_features,
-    load_cluster_data,
-    load_fraud_data,
-)
+from src.preprocessing import load_cluster_data, load_fraud_data
 
 RANDOM_STATE = 42
-
-
-def prepare_fraud_matrix(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
-    """Prépare X/y fraude avec encodage aligné sur l'API FastAPI."""
-    df = engineer_fraud_features(df)
-    df["type_encoded"] = df["type"].map(TYPE_MAP)
-    df = df.dropna(subset=["type_encoded", "isFraud"])
-    X = df[FRAUD_FEATURE_COLUMNS].astype(float)
-    y = df["isFraud"].astype(int)
-    return X, y
-
-
-def prepare_cluster_matrix(df: pd.DataFrame) -> pd.DataFrame:
-    """Prépare les features segmentation alignées sur l'API /predict/segment."""
-    df = clean_customer_data(df)
-    df = engineer_customer_features(df)
-    missing = [c for c in CLUSTER_API_COLUMNS if c not in df.columns]
-    if missing:
-        raise ValueError(f"Colonnes manquantes pour le clustering : {missing}")
-    return df[CLUSTER_API_COLUMNS].astype(float)
 
 
 def _assign_cluster_labels(centroids: pd.DataFrame) -> dict[int, str]:

@@ -178,6 +178,52 @@ export interface CustomerResponse {
   description: string;
 }
 
+export interface ConfusionMatrix {
+  tp: number;
+  fp: number;
+  tn: number;
+  fn: number;
+}
+
+export interface FraudBatchEvaluation {
+  roc_auc: number;
+  precision: number;
+  recall: number;
+  f1: number;
+  confusion_matrix: ConfusionMatrix;
+}
+
+export interface FraudBatchRow extends FraudResponse {
+  row_index: number;
+}
+
+export interface FraudBatchResponse {
+  total: number;
+  processed: number;
+  summary: {
+    fraud_count: number;
+    fraud_rate: number;
+    risk_distribution: Record<string, number>;
+  };
+  evaluation: FraudBatchEvaluation | null;
+  rows: FraudBatchRow[];
+  errors: string[];
+}
+
+export interface SegmentBatchRow extends CustomerResponse {
+  row_index: number;
+}
+
+export interface SegmentBatchResponse {
+  total: number;
+  processed: number;
+  summary: {
+    cluster_distribution: Record<string, number>;
+  };
+  rows: SegmentBatchRow[];
+  errors: string[];
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -185,7 +231,30 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const detail = await res.text();
-    throw new Error(detail || `HTTP ${res.status}`);
+    try {
+      const json = JSON.parse(detail) as { detail?: string };
+      throw new Error(json.detail || detail || `HTTP ${res.status}`);
+    } catch (e) {
+      if (e instanceof Error && e.message !== detail) throw e;
+      throw new Error(detail || `HTTP ${res.status}`);
+    }
+  }
+  return res.json() as Promise<T>;
+}
+
+async function uploadBatch<T>(path: string, file: File): Promise<T> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', body: form });
+  if (!res.ok) {
+    const detail = await res.text();
+    try {
+      const json = JSON.parse(detail) as { detail?: string };
+      throw new Error(json.detail || detail || `HTTP ${res.status}`);
+    } catch (e) {
+      if (e instanceof Error && e.message !== detail) throw e;
+      throw new Error(detail || `HTTP ${res.status}`);
+    }
   }
   return res.json() as Promise<T>;
 }
@@ -205,5 +274,8 @@ export const api = {
     request<FraudResponse>('/predict/fraud', { method: 'POST', body: JSON.stringify(body) }),
   predictSegment: (body: CustomerRequest) =>
     request<CustomerResponse>('/predict/segment', { method: 'POST', body: JSON.stringify(body) }),
+  predictFraudBatch: (file: File) => uploadBatch<FraudBatchResponse>('/predict/fraud/batch', file),
+  predictSegmentBatch: (file: File) =>
+    uploadBatch<SegmentBatchResponse>('/predict/segment/batch', file),
   figureUrl: (filename: string) => `${API_BASE}/figures/${filename}`,
 };
