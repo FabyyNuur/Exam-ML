@@ -14,6 +14,7 @@ import pandas as pd
 from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score
 
 from mlops.api.schemas import (
+    MAX_UPLOAD_BYTES,
     ConfusionMatrix,
     CustomerRequest,
     CustomerResponse,
@@ -22,7 +23,6 @@ from mlops.api.schemas import (
     FraudBatchRow,
     FraudRequest,
     FraudResponse,
-    MAX_UPLOAD_BYTES,
     SegmentBatchResponse,
     SegmentBatchRow,
 )
