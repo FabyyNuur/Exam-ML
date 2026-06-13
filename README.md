@@ -163,12 +163,26 @@ Dans les modules **Fraude** et **Segmentation**, le bouton **TESTER LE MODÈLE**
 
 Modèles téléchargeables : `GET /predict/templates/fraud` et `GET /predict/templates/segment` (fichiers dans `data/samples/`).
 
+### Rapports analytiques A4 (PDF)
+
+Rapports HTML format A4 par exercice, alimentés dynamiquement par l’API (`/content/pages`, `/metadata`, `/figures`).
+
+| URL | Contenu |
+|---|---|
+| `/rapports` | Liste des 2 rapports (fraude, segmentation) |
+| `/rapport/fraude` | Rapport Exercice 1 — détection de fraude |
+| `/rapport/segmentation` | Rapport Exercice 2 — segmentation client |
+
+**Accès :** bouton **RAPPORT PDF** dans les modules Fraude/Segmentation, ou section Livrables → « Voir tous les rapports ».
+
+**Export PDF :** bouton « Télécharger PDF » → dialogue d’impression du navigateur → « Enregistrer au format PDF ».
+
 ## Modules du dashboard
 
 | Module | Contenu |
 |---|---|
-| Fraude | EDA, prétraitement, modélisation XGBoost, SHAP, test CSV + saisie manuelle |
-| Segmentation | EDA clients, K-Means k=2, profils Premium/Digital, test CSV + saisie manuelle |
+| Fraude | EDA, prétraitement, modélisation XGBoost, SHAP, test CSV, rapport PDF |
+| Segmentation | EDA clients, K-Means k=2, profils Premium/Digital, test CSV, rapport PDF |
 | MLOps | Pipeline, déploiement, monitoring |
 | Livrables | Structure du dépôt et documentation |
 

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ScatterChart,
@@ -239,6 +240,12 @@ export function SegmentationModule() {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            <Link
+              to="/rapport/segmentation"
+              className="flex items-center gap-2 bg-white/80 backdrop-blur-md border border-white/60 text-slate-700 px-4 py-2 font-medium text-sm rounded-lg hover:bg-white hover:text-indigo-600 transition-all shadow-sm"
+            >
+              <FileText size={16} /> RAPPORT PDF
+            </Link>
             <button
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2 bg-white/80 backdrop-blur-md border border-white/60 text-slate-700 px-4 py-2 font-medium text-sm rounded-lg hover:bg-white hover:text-indigo-600 transition-all shadow-sm"

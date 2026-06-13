@@ -519,7 +519,7 @@ export function ClusterInteractiveExplorer({
           onChange={setEducation}
           options={[
             { value: "all", label: "Tous niveaux" },
-            ...(data?.filters.education ?? []).map((e) => ({ value: e, label: e })),
+            ...(data?.filters?.education ?? []).map((e) => ({ value: e, label: e })),
           ]}
         />
         <SelectField
@@ -528,14 +528,14 @@ export function ClusterInteractiveExplorer({
           onChange={setCluster}
           options={[
             { value: "all", label: "Tous clusters" },
-            ...(data?.filters.clusters ?? []).map((c) => ({ value: c, label: c })),
+            ...(data?.filters?.clusters ?? []).map((c) => ({ value: c, label: c })),
           ]}
         />
         <SelectField
           label="Réponse campagne"
           value={response}
           onChange={setResponse}
-          options={data?.filters.response ?? [
+          options={data?.filters?.response ?? [
             { value: "all", label: "Toutes réponses" },
             { value: "1", label: "Accepté" },
             { value: "0", label: "Refusé" },

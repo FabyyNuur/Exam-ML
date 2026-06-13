@@ -1,5 +1,6 @@
 import React from 'react';
-import { FileCode2, Github, BookOpen, Presentation, FileCode, CheckCircle2, FolderTree } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { FileCode2, Github, BookOpen, Presentation, FileCode, CheckCircle2, FolderTree, FileText } from 'lucide-react';
 
 const REPO_ITEMS = [
   { icon: BookOpen, title: 'README.md', desc: 'Installation, entraînement, lancement API + frontend React.' },
@@ -48,9 +49,20 @@ export function DeliverablesModule() {
           </h3>
           <div className="space-y-8">
             {[
-              { title: 'Rapport Technique', desc: 'docs/rapport_technique.md — performances, architecture MLOps, algorithmes (K-Means, XGBoost).' },
-              { title: 'Présentation', desc: 'docs/presentation.md — synthèse du projet M2 CDSD.' },
-              { title: 'Tableau de Bord Interactif', desc: 'frontend/ — interface React avec données réelles (métriques, figures, prédiction live).' },
+              {
+                title: 'Rapports analytiques A4',
+                desc: 'Rapports PDF par exercice — fraude et segmentation — visualisables et exportables depuis le dashboard.',
+                link: '/rapports',
+                linkLabel: 'Voir tous les rapports',
+              },
+              {
+                title: 'Présentation',
+                desc: 'docs/presentation.md — synthèse du projet M2 CDSD.',
+              },
+              {
+                title: 'Tableau de Bord Interactif',
+                desc: 'frontend/ — interface React avec données réelles (métriques, figures, prédiction live).',
+              },
             ].map((item, i, arr) => (
               <div key={item.title} className="flex gap-4">
                 <div className="flex flex-col items-center">
@@ -60,8 +72,19 @@ export function DeliverablesModule() {
                   {i < arr.length - 1 && <div className="w-0.5 h-full bg-emerald-100 my-2" />}
                 </div>
                 <div className="pb-4">
-                  <div className="text-slate-800 font-bold mb-2">{item.title}</div>
+                  <div className="text-slate-800 font-bold mb-2 flex items-center gap-2">
+                    {item.title === 'Rapports analytiques A4' && <FileText size={18} className="text-indigo-600" />}
+                    {item.title}
+                  </div>
                   <div className="text-slate-600 text-sm leading-relaxed">{item.desc}</div>
+                  {'link' in item && item.link && (
+                    <Link
+                      to={item.link}
+                      className="inline-flex items-center gap-1 mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800"
+                    >
+                      {item.linkLabel} →
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}

@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   BarChart,
   Bar,
@@ -11,7 +12,7 @@ import {
   PieChart,
   Pie,
   Cell,
-} from "recharts";
+} from 'recharts';
 import {
   ShieldAlert,
   FileText,
@@ -20,7 +21,7 @@ import {
   Scale,
   Cpu,
   UploadCloud,
-} from "lucide-react";
+} from 'lucide-react';
 import { ApiStatusBadge } from "./ApiStatusBadge";
 import { ChartWithInterpretation } from "./ChartWithInterpretation";
 import { InsightsList } from "./InsightsList";
@@ -204,6 +205,12 @@ export function FraudModule() {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            <Link
+              to="/rapport/fraude"
+              className="flex items-center gap-2 bg-white/80 backdrop-blur-md border border-white/60 text-slate-700 px-4 py-2 font-medium text-sm rounded-lg hover:bg-white hover:text-red-600 transition-all shadow-sm"
+            >
+              <FileText size={16} /> RAPPORT PDF
+            </Link>
             <button
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2 bg-white/80 backdrop-blur-md border border-white/60 text-slate-700 px-4 py-2 font-medium text-sm rounded-lg hover:bg-white hover:text-indigo-600 transition-all shadow-sm"
@@ -274,9 +281,6 @@ export function FraudModule() {
                     dataset PaySim simule des transferts mobiles où la fraude
                     ne représente qu&apos;environ 0,11 % des transactions.
                   </p>
-                  {contextPage?.insights.map((insight, i) => (
-                    <p key={i}>{insight}</p>
-                  ))}
                 </div>
               </div>
               <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm">

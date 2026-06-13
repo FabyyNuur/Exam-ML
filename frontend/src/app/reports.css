@@ -1,0 +1,169 @@
+.report-shell {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #e0f2fe, #eef2ff, #fdf4ff);
+}
+
+.report-viewport {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.report-a4-page {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto 1.5rem;
+  padding: 20mm;
+  background: #fff;
+  color: #1e293b;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
+  font-family: Georgia, 'Times New Roman', serif;
+  line-height: 1.55;
+}
+
+.report-a4-page.report-page-break {
+  break-after: page;
+  page-break-after: always;
+}
+
+.report-header-bar {
+  border-bottom: 2px solid #334155;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-family: system-ui, sans-serif;
+  font-size: 0.7rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.report-cover-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 2rem 0 0.5rem;
+  line-height: 1.25;
+}
+
+.report-cover-subtitle {
+  font-size: 1rem;
+  color: #475569;
+  margin-bottom: 2rem;
+  font-family: system-ui, sans-serif;
+}
+
+.report-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.report-kpi-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  font-family: system-ui, sans-serif;
+}
+
+.report-kpi-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.report-kpi-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 0.25rem;
+}
+
+.report-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 1.5rem 0 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.report-page-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 1rem 0 0.35rem;
+  font-family: system-ui, sans-serif;
+}
+
+.report-insights {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0 1rem;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.report-insights li {
+  margin-bottom: 0.35rem;
+}
+
+.report-figure {
+  margin: 1rem 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.report-figure img {
+  width: 100%;
+  height: auto;
+  max-height: 90mm;
+  object-fit: contain;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+}
+
+.report-figure-caption {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.35rem;
+  font-family: system-ui, sans-serif;
+  font-style: italic;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .report-shell {
+    background: #fff !important;
+  }
+
+  .report-viewport {
+    max-width: none;
+    padding: 0;
+  }
+
+  .report-a4-page {
+    box-shadow: none;
+    margin: 0;
+    width: 210mm;
+    min-height: 297mm;
+  }
+}
