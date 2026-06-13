@@ -26,6 +26,7 @@ import { ChartWithInterpretation } from "./ChartWithInterpretation";
 import { InsightsList } from "./InsightsList";
 import { MetricsCards } from "./MetricsCards";
 import { PredictFraudModal } from "./PredictFraudModal";
+import { FraudInteractiveExplorer } from "./FraudInteractiveExplorer";
 import {
   useFraudEda,
   useFraudModels,
@@ -37,6 +38,8 @@ import {
   interpretFraudByType,
   interpretFraudClassBalance,
   interpretFraudCvRoc,
+  interpretFraudPreprocessing,
+  interpretFraudSmote,
   interpretFraudTestMetrics,
 } from "@/lib/chartInterpretations";
 import type { PageContent, PageFigure } from "@/lib/api";
@@ -133,9 +136,57 @@ export function FraudModule() {
       fraudByType: interpretFraudByType(eda),
       cvRoc: interpretFraudCvRoc(modelsData?.models),
       testMetrics: interpretFraudTestMetrics(fraudMeta),
+      preprocessing: interpretFraudPreprocessing(eda),
+      smote: interpretFraudSmote(smoteData, eda),
     }),
-    [eda, modelsData, fraudMeta],
+    [eda, modelsData, fraudMeta, smoteData],
   );
+
+  const derivedFeatureComparison = useMemo(() => {
+    const features = eda?.preprocessing?.derived_features ?? [];
+    return features.map((f) => ({
+      name: f.label,
+      fraude: Math.round(f.fraud_mean * 100) / 100,
+      legitime: Math.round(f.legit_mean * 100) / 100,
+    }));
+  }, [eda]);
+
+  const prepMetrics = useMemo(() => {
+    const prep = eda?.preprocessing;
+    if (!prep) return [];
+    const orig = prep.derived_features.find((f) => f.name === "orig_zeroed");
+    const err = prep.derived_features.find((f) => f.name === "error_balance_orig");
+    const typeCount = Object.keys(prep.type_encoding).length;
+    return [
+      {
+        label: "Features finales",
+        value: String(prep.feature_count),
+        color: "text-red-600",
+      },
+      {
+        label: "Types encodés",
+        value: String(typeCount),
+        color: "text-red-500",
+      },
+      {
+        label: "orig_zeroed (fraude)",
+        value: orig ? `${orig.fraud_mean.toFixed(0)} %` : "—",
+        color: "text-red-600",
+      },
+      {
+        label: "orig_zeroed (légitime)",
+        value: orig ? `${orig.legit_mean.toFixed(2)} %` : "—",
+        color: "text-slate-600",
+      },
+      {
+        label: "Δ error_balance_orig",
+        value: err
+          ? `${Math.round(err.fraud_mean - err.legit_mean).toLocaleString("fr-FR")}`
+          : "—",
+        color: "text-red-400",
+      },
+    ];
+  }, [eda]);
 
   return (
     <div className="w-full h-full flex flex-col gap-6 p-6 relative z-10">
@@ -178,7 +229,7 @@ export function FraudModule() {
             },
             {
               id: "IMBALANCE",
-              label: "DÉSÉQUILIBRE (SMOTE)",
+              label: "CLASSE MINORITAIRE (SMOTE)",
               icon: <Scale size={16} />,
             },
             {
@@ -220,8 +271,8 @@ export function FraudModule() {
                   <p>
                     L&apos;objectif de ce module est de détecter les
                     transactions financières frauduleuses en temps réel. Le
-                    dataset PaySim simule des transferts mobiles avec un fort
-                    déséquilibre de classes.
+                    dataset PaySim simule des transferts mobiles où la fraude
+                    ne représente qu&apos;environ 0,11 % des transactions.
                   </p>
                   {contextPage?.insights.map((insight, i) => (
                     <p key={i}>{insight}</p>
@@ -253,11 +304,15 @@ export function FraudModule() {
                 variant="red"
               />
 
+              {eda?.records?.length ? (
+                <FraudInteractiveExplorer data={eda} />
+              ) : null}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
                 <div className="flex flex-col gap-3">
                   <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                     <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">
-                      Déséquilibre des classes
+                      Répartition des classes
                     </h3>
                     {eda ? (
                       <ResponsiveContainer width="100%" height={220}>
@@ -354,16 +409,92 @@ export function FraudModule() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              className="flex flex-col gap-6"
             >
-              {prepPage?.insights.map((insight, i) => (
-                <div
-                  key={i}
-                  className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm text-slate-600 text-sm leading-relaxed"
-                >
-                  {insight}
+              <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm">
+                <h3 className="text-lg font-bold text-slate-800 mb-2">
+                  {prepPage?.title}
+                </h3>
+                <p className="text-slate-500 text-sm">{prepPage?.subtitle}</p>
+              </div>
+
+              <InsightsList
+                title="Étapes de préparation"
+                insights={prepPage?.insights ?? []}
+                variant="numbered"
+              />
+
+              {eda?.preprocessing?.pipeline_steps?.length ? (
+                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                  <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">
+                    Pipeline de prétraitement
+                  </h3>
+                  <ol className="flex flex-col gap-3">
+                    {eda.preprocessing.pipeline_steps.map((step, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-3 text-sm text-slate-700"
+                      >
+                        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center">
+                          {i + 1}
+                        </span>
+                        <span className="pt-1 leading-relaxed">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
-              ))}
+              ) : null}
+
+              {prepMetrics.length > 0 && <MetricsCards metrics={prepMetrics} />}
+
+              {derivedFeatureComparison.length > 0 && (
+                <div className="flex flex-col gap-3">
+                  <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                    <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase">
+                      Features dérivées — fraude vs légitime
+                    </h3>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart data={derivedFeatureComparison}>
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="#e2e8f0"
+                          vertical={false}
+                        />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fill: "#64748b", fontSize: 10 }}
+                          interval={0}
+                          angle={-12}
+                          textAnchor="end"
+                          height={60}
+                        />
+                        <YAxis tick={{ fill: "#64748b", fontSize: 12 }} />
+                        <RechartsTooltip />
+                        <Bar
+                          dataKey="fraude"
+                          name="Fraude (moy.)"
+                          fill="#ef4444"
+                          radius={[4, 4, 0, 0]}
+                        />
+                        <Bar
+                          dataKey="legitime"
+                          name="Légitime (moy.)"
+                          fill="#94a3b8"
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <InterpretationBlock text={chartInterpretations.preprocessing} />
+                </div>
+              )}
+
+              {!eda?.preprocessing && (
+                <p className="text-slate-400 text-sm">
+                  Statistiques de prétraitement non disponibles — exécuter
+                  scripts/export_analytics.py.
+                </p>
+              )}
             </motion.div>
           )}
 
@@ -377,11 +508,11 @@ export function FraudModule() {
             >
               <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-900 text-sm">
                 <strong>Attention :</strong> Stratégies SMOTE, class_weight=&apos;balanced&apos;,
-                seuil de décision ajusté — ~0,1&nbsp;% de fraudes dans le dataset.
+                seuil de décision ajusté — 0,11&nbsp;% de fraudes (1&nbsp;142 sur 1,0&nbsp;M de transactions).
               </div>
 
               <InsightsList
-                title="Gestion du déséquilibre"
+                title="Classe minoritaire & SMOTE"
                 insights={imbalancePage?.insights ?? []}
                 variant="red"
               />
@@ -400,9 +531,7 @@ export function FraudModule() {
                 </p>
               )}
 
-              {smoteData?.insight && (
-                <InterpretationBlock text={smoteData.insight} />
-              )}
+              <InterpretationBlock text={chartInterpretations.smote} />
             </motion.div>
           )}
 
@@ -546,8 +675,8 @@ export function FraudModule() {
 
               <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-red-800 text-sm leading-relaxed space-y-2">
                 <p>
-                  <strong>Synthèse :</strong> Le dataset PaySim présente un
-                  déséquilibre de classes (~0,1 % de fraudes). Nous avons
+                  <strong>Synthèse :</strong> La fraude ne compte que 0,11 % des
+                  transactions (1 142 sur 1,0 M). Nous avons
                   appliqué SMOTE et un rééquilibrage par class_weight pour que
                   le modèle ne néglige pas la classe minoritaire.
                 </p>

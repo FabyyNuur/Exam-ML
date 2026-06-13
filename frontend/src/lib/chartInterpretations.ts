@@ -4,8 +4,10 @@ import type {
   ClusterMetadata,
   ClusterSummary,
   FraudEdaAnalytics,
+  FraudEdaRecord,
   FraudMetadata,
   FraudModelMetric,
+  FraudSmoteAnalytics,
 } from "./api";
 
 export interface ClusterProfileStats {
@@ -292,7 +294,151 @@ export function interpretFraudTestMetrics(
   return (
     `${meta.model_name.toUpperCase()} au seuil 30 % : ROC-AUC ${roc} %, recall ${recall} %, ` +
     `precision ${prec} %, F1 ${f1} %${cv} ` +
-    `Le recall prioritaire réduit les fraudes non détectées ; la precision modérée reflète le déséquilibre extrême (≈ 0,1 % de fraudes).`
+    `Le recall prioritaire réduit les fraudes non détectées ; la precision modérée s'explique par la faible proportion de fraudes (≈ 0,11 %).`
+  );
+}
+
+type FraudNumericKey = keyof Pick<
+  FraudEdaRecord,
+  | "amount"
+  | "step"
+  | "oldbalance_org"
+  | "newbalance_orig"
+  | "oldbalance_dest"
+  | "newbalance_dest"
+  | "error_balance_orig"
+  | "error_balance_dest"
+>;
+
+function meanFraudField(records: FraudEdaRecord[], key: FraudNumericKey): number {
+  if (!records.length) return 0;
+  return records.reduce((sum, r) => sum + Number(r[key] ?? 0), 0) / records.length;
+}
+
+export function buildFraudExplorerInterpretation({
+  filtered,
+  totalCount,
+  xKey,
+  yKey,
+  typeFilter,
+  fraudFilter,
+  zeroedFilter,
+  comparisonData,
+  metricLabel,
+  groupBy,
+}: {
+  filtered: FraudEdaRecord[];
+  totalCount: number;
+  xKey: FraudNumericKey;
+  yKey: FraudNumericKey;
+  typeFilter: string;
+  fraudFilter: string;
+  zeroedFilter: string;
+  comparisonData: { group: string; avg: number; count: number }[];
+  metricLabel: string;
+  groupBy: "type" | "is_fraud";
+}): string {
+  const fraudRows = filtered.filter((r) => r.is_fraud === 1);
+  const legitRows = filtered.filter((r) => r.is_fraud === 0);
+  const fraudPct =
+    filtered.length > 0
+      ? ((100 * fraudRows.length) / filtered.length).toFixed(1)
+      : "0";
+  const fraudAmt = Math.round(meanFraudField(fraudRows, "amount"));
+  const legitAmt = Math.round(meanFraudField(legitRows, "amount"));
+  const fraudErr = Math.round(meanFraudField(fraudRows, "error_balance_orig"));
+  const legitErr = Math.round(meanFraudField(legitRows, "error_balance_orig"));
+  const zeroedPct =
+    fraudRows.length > 0
+      ? Math.round(
+          (100 * fraudRows.filter((r) => r.orig_zeroed === 1).length) /
+            fraudRows.length,
+        )
+      : 0;
+
+  let main = `${filtered.length} transaction(s) affichée(s) sur ${totalCount} (${fraudPct} % de fraudes dans la sélection). `;
+
+  if (xKey === "amount" && yKey === "oldbalance_org") {
+    main +=
+      `Les fraudes se concentrent sur des montants élevés (≈ ${fraudAmt.toLocaleString("fr-FR")} € vs ${legitAmt.toLocaleString("fr-FR")} € en légitime) ` +
+      `avec des soldes émetteur plus importants — schéma typique de transfert massif avant vidage de compte.`;
+  } else if (xKey === "amount" && yKey === "error_balance_orig") {
+    main +=
+      `L'erreur de solde émetteur diverge nettement : fraude ≈ ${fraudErr.toLocaleString("fr-FR")} € vs légitime ≈ ${legitErr.toLocaleString("fr-FR")} €, ` +
+      `signal clé retenu dans le feature engineering (error_balance_orig).`;
+  } else if (xKey === "step" && yKey === "amount") {
+    main +=
+      `Montant moyen fraude ${fraudAmt.toLocaleString("fr-FR")} € contre ${legitAmt.toLocaleString("fr-FR")} € — ` +
+      `le step seul ne sépare pas les classes ; c'est le couple montant + soldes qui discrimine.`;
+  } else {
+    main +=
+      `Montants frauduleux ≈ ${fraudAmt.toLocaleString("fr-FR")} € vs ${legitAmt.toLocaleString("fr-FR")} € ; ` +
+      `error_balance_orig fraude ≈ ${fraudErr.toLocaleString("fr-FR")} € vs ${legitErr.toLocaleString("fr-FR")} €.`;
+  }
+
+  if (zeroedPct > 30 && fraudRows.length > 0) {
+    main += ` ${zeroedPct} % des fraudes filtrées présentent un compte émetteur vidé (orig_zeroed) — indicateur fort de comportement suspect.`;
+  }
+
+  if (comparisonData.length >= 2) {
+    const top = comparisonData[0];
+    const bottom = comparisonData[comparisonData.length - 1];
+    const ratio = bottom.avg !== 0 ? (top.avg / bottom.avg).toFixed(1) : "—";
+    const groupLabel = groupBy === "type" ? "type" : "classe";
+    main +=
+      ` Par ${groupLabel}, ${top.group} domine sur ${metricLabel.toLowerCase()} ` +
+      `(${top.avg.toLocaleString("fr-FR")}, n=${top.count}), soit ≈ ${ratio}× ${bottom.group} (${bottom.avg.toLocaleString("fr-FR")}).`;
+  }
+
+  const filterParts: string[] = [];
+  if (typeFilter !== "all") filterParts.push(`type ${typeFilter}`);
+  if (fraudFilter === "1") filterParts.push("fraudes seules");
+  if (fraudFilter === "0") filterParts.push("légitimes seules");
+  if (zeroedFilter === "1") filterParts.push("compte émetteur vidé");
+  if (filterParts.length) {
+    main += ` Filtres actifs : ${filterParts.join(", ")}.`;
+  }
+
+  return main;
+}
+
+export function interpretFraudPreprocessing(
+  eda: FraudEdaAnalytics | null | undefined,
+): string {
+  const prep = eda?.preprocessing;
+  if (!prep) {
+    return "Statistiques de prétraitement indisponibles — exécuter scripts/export_analytics.py.";
+  }
+  const orig = prep.derived_features.find((f) => f.name === "orig_zeroed");
+  const err = prep.derived_features.find((f) => f.name === "error_balance_orig");
+  return (
+    `${prep.feature_count} features après engineering : encodage de 5 types de transaction, ` +
+    `standardisation StandardScaler, split 80/20 stratifié puis SMOTE (10 %) sur le train uniquement. ` +
+    `Les fraudes présentent error_balance_orig ≈ ${err?.fraud_mean.toLocaleString("fr-FR") ?? "—"} ` +
+    `vs ${err?.legit_mean.toLocaleString("fr-FR") ?? "—"} pour le légitime ; ` +
+    `${orig?.fraud_mean ?? "—"} % de comptes émetteurs vidés en fraude vs ${orig?.legit_mean ?? "—"} % en légitime — ` +
+    `d'où les variables dérivées retenues pour XGBoost.`
+  );
+}
+
+export function interpretFraudSmote(
+  smote: FraudSmoteAnalytics | null | undefined,
+  eda: FraudEdaAnalytics | null | undefined,
+): string {
+  if (!smote?.metrics?.length) return "Métriques SMOTE indisponibles.";
+  const beforeFraud = smote.metrics.find((m) => m.label.includes("Fraude avant"));
+  const afterFraud = smote.metrics.find((m) => m.label.includes("Fraude après"));
+  const beforeNormal = smote.metrics.find((m) => m.label.includes("Normal avant"));
+  if (!beforeFraud || !afterFraud || !beforeNormal) return smote.insight;
+  const ratio = (afterFraud.count / beforeNormal.count * 100).toFixed(0);
+  const totalTx = eda?.total_transactions;
+  const pctText = totalTx
+    ? ` (base globale : ${fmt(totalTx)} transactions, ${eda?.class_balance?.[1]?.pct ?? 0.11} % fraudes)`
+    : "";
+  return (
+    `Avant SMOTE : ${fmt(beforeFraud.count)} fraudes vs ${fmt(beforeNormal.count)} normales sur le train ; ` +
+    `après SMOTE : ${fmt(afterFraud.count)} fraudes (${ratio} % du volume normal). ` +
+    `Le rééquilibrage stabilise l'apprentissage sans toucher au jeu de test${pctText}.`
   );
 }
 

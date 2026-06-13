@@ -36,7 +36,9 @@ CLUSTER_SOURCE_HINTS = [
 ]
 
 
-def _load_csv_from_bytes(content: bytes, sep_primary: str, sep_fallback: str | None = None) -> pd.DataFrame:
+def _load_csv_from_bytes(
+    content: bytes, sep_primary: str, sep_fallback: str | None = None
+) -> pd.DataFrame:
     last_error: Exception | None = None
     for encoding in ("utf-8", "latin-1"):
         try:
@@ -94,9 +96,7 @@ def validate_cluster_columns(df: pd.DataFrame) -> list[str]:
     for col in ("Income", "Recency", "NumWebPurchases", "NumStorePurchases"):
         if col not in df.columns:
             missing.append(col)
-    if "Children" not in df.columns and not (
-        "Kidhome" in df.columns and "Teenhome" in df.columns
-    ):
+    if "Children" not in df.columns and not ("Kidhome" in df.columns and "Teenhome" in df.columns):
         missing.append("Children ou Kidhome+Teenhome")
     return missing
 

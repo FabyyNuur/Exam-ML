@@ -52,10 +52,49 @@ export interface PagesResponse {
   phases: { id: string; label: string; color: string }[];
 }
 
+export interface FraudEdaRecord {
+  amount: number;
+  step: number;
+  oldbalance_org: number;
+  newbalance_orig: number;
+  oldbalance_dest: number;
+  newbalance_dest: number;
+  error_balance_orig: number;
+  error_balance_dest: number;
+  orig_zeroed: number;
+  type: string;
+  is_fraud: number;
+}
+
+export interface FraudDerivedFeatureStat {
+  name: string;
+  label: string;
+  fraud_mean: number;
+  legit_mean: number;
+  description: string;
+}
+
+export interface FraudPreprocessingStats {
+  feature_count: number;
+  type_encoding: Record<string, number>;
+  derived_features: FraudDerivedFeatureStat[];
+  pipeline_steps: string[];
+  amount_fraud_mean: number;
+  amount_legit_mean: number;
+}
+
 export interface FraudEdaAnalytics {
   class_balance: { label: string; count: number; pct: number }[];
   fraud_by_type: { type: string; fraud: number }[];
   total_transactions: number;
+  records?: FraudEdaRecord[];
+  numeric_variables?: { key: string; label: string }[];
+  filters?: {
+    types: string[];
+    is_fraud: { value: string; label: string }[];
+    orig_zeroed: { value: string; label: string }[];
+  };
+  preprocessing?: FraudPreprocessingStats;
 }
 
 export interface FraudModelMetric {

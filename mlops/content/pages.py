@@ -43,7 +43,7 @@ PAGES = [
         "subtitle": "Détection de fraude & segmentation client — M2 CDSD",
         "insights": [
             "Parcours complet : exploration → prétraitement → modélisation → évaluation → déploiement.",
-            "Exercice 1 : classification binaire déséquilibrée (XGBoost + SMOTE).",
+            "Exercice 1 : classification binaire à classe minoritaire rare — 0,11 % de fraudes (XGBoost + SMOTE).",
             "Exercice 2 : clustering non supervisé (K-Means, k=2).",
             "API FastAPI pour l'inférence en production.",
         ],
@@ -55,33 +55,37 @@ PAGES = [
         "section": "Exercice 1 · Fraude",
         "phase": "eda",
         "title": "Exploration des transactions",
-        "subtitle": "Analyse exploratoire — detection_fraude.csv (~1 M lignes)",
+        "subtitle": "Analyse exploratoire — detection_fraude.csv (1 048 575 lignes)",
         "insights": [
-            "Le jeu de données présente un déséquilibre : environ 0,1 % des transactions sont frauduleuses.",
-            "Les montants et les soldes des comptes sont très asymétriques entre transactions légitimes et frauduleuses.",
-            "L'analyse révèle des comportements suspects, notamment des comptes vidés après un transfert massif.",
+            "Sur 1 048 575 transactions, seules 1 142 sont frauduleuses (0,11 % contre 99,89 % de légitimes) — ROC-AUC et recall priment sur l'accuracy.",
+            "Les montants frauduleux (moy. ≈ 101 196 €) dépassent largement le légitime (≈ 33 €) ; les distributions sont très asymétriques.",
+            "CASH_OUT (578 cas) et TRANSFER (564) concentrent ≈ 99 % des fraudes ; PAYMENT et CASH_IN sont quasi absents du signal.",
+            "Les schémas suspects incluent le vidage du compte émetteur (orig_zeroed : 100 % en fraude vs 0,06 % en légitime) et des écarts massifs de solde (error_balance_orig ≈ −51 707 vs 0 en légitime).",
         ],
         "figures": [
             (
                 "ex1_class_distribution.png",
                 "Distribution des classes",
-                "Déséquilibre extrême isFraud",
-                "Moins d'une transaction sur mille est frauduleuse. Ce déséquilibre impose des stratégies "
-                "de rééquilibrage et des métriques adaptées (ROC-AUC, recall) plutôt que l'accuracy seule.",
+                "Répartition isFraud (0,11 % de fraudes)",
+                "Sur 1 048 575 transactions, 1 042 433 sont légitimes (99,89 %) et 1 142 frauduleuses (0,11 %). "
+                "Un classificateur naïf atteindrait ~99,9 % d'accuracy en ignorant la fraude — "
+                "d'où l'usage du ROC-AUC et du recall plutôt que l'accuracy seule.",
             ),
             (
                 "ex1_amount_distribution.png",
                 "Distribution des montants",
                 "Montants par type de transaction",
-                "Les montants des transactions frauduleuses tendent à être plus élevés et plus dispersés que ceux "
-                "des transactions normales, en particulier pour les transferts (TRANSFER) et les retraits (CASH_OUT).",
+                "Montant moyen fraude ≈ 101 196 € vs ≈ 33 € en légitime. "
+                "Les montants frauduleux sont plus élevés et dispersés, surtout pour TRANSFER et CASH_OUT "
+                "qui concentrent la quasi-totalité des cas.",
             ),
             (
                 "ex1_suspicious_behavior.png",
                 "Comportements suspects",
                 "Patterns de fraude identifiés en EDA",
-                "Les schémas typiques de fraude incluent le vidage du compte émetteur (orig_zeroed) et des écarts "
-                "importants entre le montant transféré et la variation réelle du solde (error_balance).",
+                "100 % des fraudes TRANSFER/CASH_OUT analysées présentent orig_zeroed (compte émetteur vidé) "
+                "vs 0,06 % en légitime ; error_balance_orig moyen ≈ −51 707 € en fraude vs ≈ 0 € en légitime. "
+                "Ces écarts justifient les features dérivées retenues au prétraitement.",
             ),
         ],
     },
@@ -91,11 +95,13 @@ PAGES = [
         "section": "Exercice 1 · Fraude",
         "phase": "preprocessing",
         "title": "Feature engineering & rééquilibrage",
-        "subtitle": "Variables dérivées et gestion du déséquilibre",
+        "subtitle": "10 features finales — variables dérivées, encodage et standardisation",
         "insights": [
-            "Features dérivées : error_balance_orig, error_balance_dest, orig_zeroed.",
-            "Encodage ordinal du type de transaction (PAYMENT → 0 … CASH_IN → 4).",
-            "Standardisation (StandardScaler) avant entraînement.",
+            "Features dérivées : error_balance_orig = newbalanceOrig − (oldbalanceOrg − amount), error_balance_dest = newbalanceDest − (oldbalanceDest + amount), orig_zeroed (compte émetteur vidé).",
+            "Encodage ordinal du type via TYPE_MAP : PAYMENT=0, TRANSFER=1, CASH_OUT=2, DEBIT=3, CASH_IN=4 — 5 types → 10 features avec amount, step et soldes.",
+            "StandardScaler appliqué sur les 10 colonnes numériques avant entraînement (moyenne 0, écart-type 1).",
+            "Split train/test 80/20 stratifié sur isFraud : le test conserve la proportion réelle (~0,11 % de fraudes).",
+            "SMOTE (sampling_strategy=0.1) appliqué uniquement sur le train après le split — le jeu de test n'est jamais rééquilibré.",
         ],
         "figures": [],
     },
@@ -104,12 +110,12 @@ PAGES = [
         "label": "Ex1 — Déséquilibre",
         "section": "Exercice 1 · Fraude",
         "phase": "preprocessing",
-        "title": "Gestion du déséquilibre des classes",
-        "subtitle": "~0,1 % de fraudes dans le dataset",
+        "title": "Gestion de la classe minoritaire",
+        "subtitle": "0,11 % de fraudes — SMOTE sur le train uniquement",
         "insights": [
-            "Stratégies combinées : SMOTE, class_weight='balanced', seuil de décision ajusté.",
-            "SMOTE porte la classe fraude à 10 % du volume normal pour stabiliser l'apprentissage.",
-            "Le rééquilibrage s'applique uniquement sur le jeu d'entraînement — le test reste déséquilibré.",
+            "Stratégies combinées : SMOTE, class_weight='balanced', seuil de décision abaissé à 30 % pour maximiser le recall.",
+            "Avant SMOTE (train) : 914 fraudes vs 837 946 normales ; après SMOTE : 83 794 fraudes (10 % du volume normal) — le test reste à 228 fraudes réelles.",
+            "Le rééquilibrage stabilise l'apprentissage sans fausser l'évaluation : seul le jeu d'entraînement est sur-échantillonné.",
         ],
         "figures": [],
     },
@@ -166,7 +172,7 @@ PAGES = [
                 "Évaluation XGBoost",
                 "Matrice de confusion & métriques",
                 "Au seuil de 30 %, le modèle atteint un recall d'environ 97 %, ce qui signifie que la quasi-totalité "
-                "des fraudes sont détectées. La precision reste plus modérée en raison du fort déséquilibre des classes.",
+                "des fraudes sont détectées. La precision reste plus modérée car les fraudes ne représentent que 0,11 % des transactions.",
             ),
             (
                 "ex1_threshold_analysis.png",
@@ -211,7 +217,8 @@ PAGES = [
         "insights": [
             "Envoyer la même promotion à l'ensemble de la base revient à supposer que tous les clients réagissent de la même façon, or les revenus, les canaux d'achat et la sensibilité aux offres varient fortement d'un profil à l'autre.",
             "La segmentation par clustering répond à une question centrale : quels groupes partagent un comportement comparable, et comment adapter le message, le canal et l'offre à chacun pour maximiser le retour sur investissement plutôt que diluer le budget en campagnes génériques ?",
-            "Nous croisons démographie, dépenses par catégorie, récence d'achat et historique de réponse aux campagnes, car ce sont ces signaux comportementaux qui permettent de distinguer des segments réellement actionnables par les équipes marketing.",],
+            "Nous croisons démographie, dépenses par catégorie, récence d'achat et historique de réponse aux campagnes, car ce sont ces signaux comportementaux qui permettent de distinguer des segments réellement actionnables par les équipes marketing.",
+        ],
         "figures": [],
     },
     {

@@ -115,6 +115,19 @@ def test_analytics_fraud_eda(client):
     data = response.json()
     assert "class_balance" in data
     assert "fraud_by_type" in data
+    assert "total_transactions" in data
+    if data.get("records"):
+        assert isinstance(data["records"], list)
+        assert len(data["records"]) > 0
+        assert "numeric_variables" in data
+        assert "filters" in data
+        assert "types" in data["filters"]
+    if data.get("preprocessing"):
+        prep = data["preprocessing"]
+        assert prep["feature_count"] == 10
+        assert "derived_features" in prep
+        assert "pipeline_steps" in prep
+        assert len(prep["pipeline_steps"]) >= 5
 
 
 def test_analytics_fraud_models(client):

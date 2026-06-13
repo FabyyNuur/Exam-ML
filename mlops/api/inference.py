@@ -212,9 +212,7 @@ class ModelRegistry:
             )
 
         if self.fraud_scaler is not None:
-            X_scaled = pd.DataFrame(
-                self.fraud_scaler.transform(X), columns=FRAUD_FEATURE_COLUMNS
-            )
+            X_scaled = pd.DataFrame(self.fraud_scaler.transform(X), columns=FRAUD_FEATURE_COLUMNS)
         else:
             X_scaled = X
 
@@ -298,24 +296,18 @@ class ModelRegistry:
             )
 
         if self.cluster_scaler is not None:
-            X_scaled = pd.DataFrame(
-                self.cluster_scaler.transform(X), columns=CLUSTER_API_COLUMNS
-            )
+            X_scaled = pd.DataFrame(self.cluster_scaler.transform(X), columns=CLUSTER_API_COLUMNS)
         else:
             X_scaled = X
 
         cluster_ids = self.cluster_model.predict(X_scaled)
-        profiles = [
-            self.cluster_labels.get(int(cid), f"Cluster {int(cid)}") for cid in cluster_ids
-        ]
+        profiles = [self.cluster_labels.get(int(cid), f"Cluster {int(cid)}") for cid in cluster_ids]
         rows = [
             SegmentBatchRow(
                 row_index=int(row_indices[i]),
                 cluster_id=int(cluster_ids[i]),
                 profile=profiles[i],
-                description=CLUSTER_PROFILE_DESCRIPTIONS.get(
-                    profiles[i], "Profil non défini"
-                ),
+                description=CLUSTER_PROFILE_DESCRIPTIONS.get(profiles[i], "Profil non défini"),
             )
             for i in range(len(X))
         ]

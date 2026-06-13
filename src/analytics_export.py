@@ -57,19 +57,89 @@ def _write_json(path: Path, payload: dict) -> None:
 
 
 def export_fraud_eda(fraud_path: str | Path) -> dict:
-    """Calcule les stats EDA fraude pour Recharts."""
-    df = load_fraud_data(str(fraud_path))
-    fraud_col = "isFraud" if "isFraud" in df.columns else "isfraud"
-    total = len(df)
-    fraud_count = int(df[fraud_col].sum())
+    """Calcule les stats EDA fraude pour Recharts + explorateur interactif."""
+    df_raw = load_fraud_data(str(fraud_path))
+    fraud_col = "isFraud" if "isFraud" in df_raw.columns else "isfraud"
+    total = len(df_raw)
+    fraud_count = int(df_raw[fraud_col].sum())
     legit_count = total - fraud_count
 
-    fraud_df = df[df[fraud_col] == 1]
+    df = engineer_fraud_features(df_raw)
+    df["is_fraud"] = df[fraud_col].astype(int)
+
+    fraud_df = df[df["is_fraud"] == 1]
     fraud_by_type = (
         fraud_df.groupby("type").size().reset_index(name="fraud")
         if "type" in fraud_df.columns
         else pd.DataFrame(columns=["type", "fraud"])
     )
+
+    legit_df = df[df["is_fraud"] == 0]
+    rng = np.random.default_rng(42)
+    legit_sample_size = min(5000, len(legit_df))
+    legit_indices = (
+        rng.choice(legit_df.index.to_numpy(), size=legit_sample_size, replace=False)
+        if legit_sample_size > 0
+        else np.array([], dtype=int)
+    )
+    sample_df = pd.concat([fraud_df, df.loc[legit_indices]]).reset_index(drop=True)
+
+    records = []
+    for _, row in sample_df.iterrows():
+        records.append(
+            {
+                "amount": round(float(row["amount"]), 2),
+                "step": int(row["step"]),
+                "oldbalance_org": round(float(row["oldbalanceOrg"]), 2),
+                "newbalance_orig": round(float(row["newbalanceOrig"]), 2),
+                "oldbalance_dest": round(float(row["oldbalanceDest"]), 2),
+                "newbalance_dest": round(float(row["newbalanceDest"]), 2),
+                "error_balance_orig": round(float(row["error_balance_orig"]), 2),
+                "error_balance_dest": round(float(row["error_balance_dest"]), 2),
+                "orig_zeroed": int(row["orig_zeroed"]),
+                "type": str(row["type"]),
+                "is_fraud": int(row["is_fraud"]),
+            }
+        )
+
+    def _mean_for(group: pd.DataFrame, col: str) -> float:
+        return round(float(group[col].mean()), 2) if len(group) else 0.0
+
+    def _pct_zeroed(group: pd.DataFrame) -> float:
+        return round(100 * float(group["orig_zeroed"].mean()), 2) if len(group) else 0.0
+
+    derived_features = [
+        {
+            "name": "error_balance_orig",
+            "label": "Erreur solde émetteur",
+            "fraud_mean": _mean_for(fraud_df, "error_balance_orig"),
+            "legit_mean": _mean_for(legit_df, "error_balance_orig"),
+            "description": "newbalanceOrig − (oldbalanceOrg − amount)",
+        },
+        {
+            "name": "error_balance_dest",
+            "label": "Erreur solde destinataire",
+            "fraud_mean": _mean_for(fraud_df, "error_balance_dest"),
+            "legit_mean": _mean_for(legit_df, "error_balance_dest"),
+            "description": "newbalanceDest − (oldbalanceDest + amount)",
+        },
+        {
+            "name": "orig_zeroed",
+            "label": "Compte émetteur vidé",
+            "fraud_mean": _pct_zeroed(fraud_df),
+            "legit_mean": _pct_zeroed(legit_df),
+            "description": "% de transactions où oldbalanceOrg > 0 et newbalanceOrig = 0",
+        },
+        {
+            "name": "amount",
+            "label": "Montant",
+            "fraud_mean": _mean_for(fraud_df, "amount"),
+            "legit_mean": _mean_for(legit_df, "amount"),
+            "description": "Montant de la transaction",
+        },
+    ]
+
+    types = sorted(df["type"].dropna().unique().tolist()) if "type" in df.columns else []
 
     payload = {
         "class_balance": [
@@ -88,6 +158,44 @@ def export_fraud_eda(fraud_path: str | Path) -> dict:
             {"type": row["type"], "fraud": int(row["fraud"])} for _, row in fraud_by_type.iterrows()
         ],
         "total_transactions": total,
+        "records": records,
+        "numeric_variables": [
+            {"key": "amount", "label": "Montant (€)"},
+            {"key": "step", "label": "Step (temps)"},
+            {"key": "oldbalance_org", "label": "Solde émetteur (avant)"},
+            {"key": "newbalance_orig", "label": "Solde émetteur (après)"},
+            {"key": "oldbalance_dest", "label": "Solde destinataire (avant)"},
+            {"key": "newbalance_dest", "label": "Solde destinataire (après)"},
+            {"key": "error_balance_orig", "label": "Erreur solde émetteur"},
+            {"key": "error_balance_dest", "label": "Erreur solde destinataire"},
+        ],
+        "filters": {
+            "types": types,
+            "is_fraud": [
+                {"value": "all", "label": "Toutes classes"},
+                {"value": "1", "label": "Fraude uniquement"},
+                {"value": "0", "label": "Légitime uniquement"},
+            ],
+            "orig_zeroed": [
+                {"value": "all", "label": "Tous comptes"},
+                {"value": "1", "label": "Compte émetteur vidé"},
+                {"value": "0", "label": "Compte non vidé"},
+            ],
+        },
+        "preprocessing": {
+            "feature_count": len(FRAUD_FEATURE_COLUMNS),
+            "type_encoding": {k: v for k, v in TYPE_MAP.items()},
+            "derived_features": derived_features,
+            "pipeline_steps": [
+                "Feature engineering (error_balance_orig, error_balance_dest, orig_zeroed)",
+                "Encodage ordinal du type (PAYMENT=0 … CASH_IN=4)",
+                "Standardisation StandardScaler sur les 10 features",
+                "Split train/test 80/20 stratifié sur isFraud",
+                "SMOTE sur le train uniquement (sampling_strategy=0.1)",
+            ],
+            "amount_fraud_mean": _mean_for(fraud_df, "amount"),
+            "amount_legit_mean": _mean_for(legit_df, "amount"),
+        },
     }
     _write_json(ANALYTICS_DIR / "fraud_eda.json", payload)
     return payload
