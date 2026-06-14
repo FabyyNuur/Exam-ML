@@ -6,6 +6,7 @@ services:
     autoDeploy: true
     buildCommand: |
       pip install -r requirements.txt
+      plotly_get_chrome
       python scripts/create_ci_models.py
       python scripts/export_analytics.py
     startCommand: uvicorn mlops.api.app:app --host 0.0.0.0 --port $PORT

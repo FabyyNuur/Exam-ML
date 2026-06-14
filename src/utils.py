@@ -83,32 +83,13 @@ def apply_plotly_theme(fig: go.Figure) -> go.Figure:
 def save_figure(fig: go.Figure, path: str, width: int = 1000, height: int = 600) -> go.Figure:
     """Exporte la figure en PNG (kaleido) ; ne produit jamais de .html pour un chemin .png."""
     fig = apply_plotly_theme(fig)
-    if path.lower().endswith(".png"):
-        try:
-            fig.write_image(path, width=width, height=height, scale=2)
-        except Exception:
-            stub = go.Figure()
-            stub.update_layout(
-                title=dict(text=Path(path).stem, x=0.5, xanchor="center"),
-                annotations=[
-                    dict(
-                        text="Export PNG indisponible",
-                        xref="paper",
-                        yref="paper",
-                        x=0.5,
-                        y=0.5,
-                        showarrow=False,
-                    )
-                ],
-                width=width,
-                height=height,
-            )
-            stub.write_image(path, width=width, height=height, scale=2)
-        return fig
     try:
         fig.write_image(path, width=width, height=height, scale=2)
-    except Exception:
-        fig.write_html(path.replace(".png", ".html"))
+    except Exception as exc:
+        if path.lower().endswith(".png"):
+            print(f"Avertissement : export PNG ignoré pour {path} ({exc})")
+        else:
+            fig.write_html(path.replace(".png", ".html"))
     return fig
 
 

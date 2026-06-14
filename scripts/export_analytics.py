@@ -25,7 +25,18 @@ from sklearn.preprocessing import StandardScaler  # noqa: E402
 import json  # noqa: E402
 
 
+def _ensure_kaleido_chrome() -> None:
+    """Télécharge Chrome pour Kaleido v1+ si absent (Render, CI, Docker)."""
+    try:
+        from kaleido import get_chrome_sync
+
+        get_chrome_sync()
+    except Exception as exc:
+        print(f"Chrome/Kaleido indisponible — export PNG peut échouer : {exc}")
+
+
 def main() -> None:
+    _ensure_kaleido_chrome()
     fraud_path = ROOT / "data" / "raw" / "detection_fraude.csv"
     cluster_path = ROOT / "data" / "raw" / "data_cluster.csv"
     metadata_path = ROOT / "models" / "metadata.json"
