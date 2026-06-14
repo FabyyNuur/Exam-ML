@@ -31,7 +31,13 @@ from src.analytics_export import (
 from src.charts.export import export_all_charts
 from src.constants import CLUSTER_API_COLUMNS, FRAUD_THRESHOLD, TARGET_CLUSTER_K
 from src.inference_prep import prepare_cluster_matrix, prepare_fraud_matrix
-from src.models import FRAUD_MODELS, cross_validate_models, get_fraud_model, log_model_mlflow, save_model
+from src.models import (
+    FRAUD_MODELS,
+    cross_validate_models,
+    get_fraud_model,
+    log_model_mlflow,
+    save_model,
+)
 from src.preprocessing import load_cluster_data, load_fraud_data
 
 RANDOM_STATE = 42

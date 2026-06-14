@@ -14,7 +14,13 @@ from sklearn.metrics import davies_bouldin_score, silhouette_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from src.constants import CLUSTER_API_COLUMNS, DEFAULT_CLUSTER_LABELS, FRAUD_FEATURE_COLUMNS, TARGET_CLUSTER_K, TYPE_MAP
+from src.constants import (
+    CLUSTER_API_COLUMNS,
+    DEFAULT_CLUSTER_LABELS,
+    FRAUD_FEATURE_COLUMNS,
+    TARGET_CLUSTER_K,
+    TYPE_MAP,
+)
 from src.preprocessing import (
     clean_customer_data,
     engineer_customer_features,
