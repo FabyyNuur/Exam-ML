@@ -112,6 +112,37 @@ def _figure_dimensions(fig: go.Figure) -> tuple[int, int]:
     return int(width or 1000), int(height or 600)
 
 
+def export_png_from_plotly_json(chart_id: str, output_path: str | Path) -> bool:
+    """Exporte un PNG depuis le JSON Plotly pré-généré (fallback Render sans CSV fraude)."""
+    try:
+        payload = load_plotly_chart(chart_id)
+    except FileNotFoundError:
+        return False
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig = go.Figure(payload)
+    width, height = _figure_dimensions(fig)
+    save_figure(fig, str(output_path), width=width, height=height)
+    return output_path.is_file()
+
+
+def _export_missing_fraud_figures_from_json(
+    out_dir: Path,
+    builders: dict[str, Callable[[], go.Figure]],
+    exported: list[str],
+) -> None:
+    """Complète les PNG ex1_* manquants à partir des JSON versionnés."""
+    for chart_id in list_plotly_charts():
+        if not chart_id.startswith("ex1_") or chart_id in builders:
+            continue
+        png_path = out_dir / f"{chart_id}.png"
+        if png_path.exists():
+            continue
+        if export_png_from_plotly_json(chart_id, png_path):
+            print(f"Figure PNG (JSON) exportée : {png_path}")
+            exported.append(chart_id)
+
+
 def _report_figure_builders(
     fraud_path: Path,
     cluster_path: Path,
@@ -140,17 +171,18 @@ def generate_report_figure(
     output_path = Path(output_path)
     builders = _report_figure_builders(Path(fraud_path), Path(cluster_path), Path(models_dir))
     builder = builders.get(chart_id)
-    if builder is None:
-        return False
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        fig = builder()
-        width, height = _figure_dimensions(fig)
-        save_figure(fig, str(output_path), width=width, height=height)
-    except Exception as exc:
-        fig = _placeholder_figure(chart_id, str(exc)[:80])
-        save_figure(fig, str(output_path), width=1000, height=450)
-    return output_path.is_file()
+    if builder is not None:
+        try:
+            fig = builder()
+            width, height = _figure_dimensions(fig)
+            save_figure(fig, str(output_path), width=width, height=height)
+        except Exception as exc:
+            fig = _placeholder_figure(chart_id, str(exc)[:80])
+            save_figure(fig, str(output_path), width=1000, height=450)
+        if output_path.is_file():
+            return True
+    return export_png_from_plotly_json(chart_id, output_path)
 
 
 def export_report_figures(
@@ -179,4 +211,7 @@ def export_report_figures(
             fig = _placeholder_figure(chart_id, str(exc)[:80])
             save_figure(fig, str(png_path), width=1000, height=450)
             exported.append(chart_id)
+
+    if not Path(fraud_path).is_file():
+        _export_missing_fraud_figures_from_json(out_dir, builders, exported)
     return exported

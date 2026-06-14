@@ -29,3 +29,42 @@ def test_plotly_json_files_are_valid():
     for path in sorted(PLOTLY_DIR.glob("*.json")):
         payload = json.loads(path.read_text(encoding="utf-8"))
         assert "data" in payload or "layout" in payload, f"{path.name} n'est pas une figure Plotly"
+
+
+def test_export_png_from_plotly_json(tmp_path, monkeypatch):
+    from src.charts import export as charts_export
+
+    def fake_save(fig, path, width=1000, height=600):
+        Path(path).write_bytes(b"png")
+
+    monkeypatch.setattr(charts_export, "save_figure", fake_save)
+
+    out = tmp_path / "ex1_class_distribution.png"
+    ok = charts_export.export_png_from_plotly_json("ex1_class_distribution", out)
+    assert ok is True
+    assert out.is_file()
+
+
+def test_generate_report_figure_falls_back_when_builder_missing(tmp_path, monkeypatch):
+    from src.charts import export as charts_export
+
+    def fake_save(fig, path, width=1000, height=600):
+        Path(path).write_bytes(b"png")
+
+    monkeypatch.setattr(charts_export, "save_figure", fake_save)
+    monkeypatch.setattr(
+        charts_export,
+        "_report_figure_builders",
+        lambda fraud_path, cluster_path, models_dir: {},
+    )
+
+    out = tmp_path / "ex1_class_distribution.png"
+    ok = charts_export.generate_report_figure(
+        "ex1_class_distribution",
+        out,
+        tmp_path / "missing.csv",
+        tmp_path / "missing_cluster.csv",
+        tmp_path / "models",
+    )
+    assert ok is True
+    assert out.is_file()

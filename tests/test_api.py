@@ -206,6 +206,19 @@ def test_figure_endpoint(client):
         assert response.headers["content-type"] == "image/png"
 
 
+def test_figure_endpoint_ex1_json_fallback(client, monkeypatch):
+    from src.charts import export as charts_export
+
+    def fake_save(fig, path, width=1000, height=600):
+        Path(path).write_bytes(b"png")
+
+    monkeypatch.setattr(charts_export, "save_figure", fake_save)
+
+    response = client.get("/figures/ex1_class_distribution.png")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+
+
 def test_api_without_models(monkeypatch):
     monkeypatch.setattr(registry, "fraud_model", None)
     monkeypatch.setattr(registry, "cluster_model", None)
