@@ -19,7 +19,7 @@ services:
         - data/raw/**
         - models/metadata.json
         - reports/analytics/**
-        - reports/figures/mlops_monitoring.png
+        - reports/figures/**
     envVars:
       - key: PYTHON_VERSION
         value: "3.10"

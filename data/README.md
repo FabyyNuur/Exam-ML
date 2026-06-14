@@ -14,11 +14,11 @@
 
 # 2. Entraîner et exporter
 python scripts/train_and_export.py --task all
-python scripts/export_analytics.py
+python scripts/export_analytics.py   # analytics JSON + PNG rapports PDF dans reports/figures/
 
 # 3. Ou modèles CI légers (sans gros CSV fraude)
 python scripts/create_ci_models.py
-python scripts/export_analytics.py
+python scripts/export_analytics.py   # analytics JSON + PNG rapports PDF dans reports/figures/
 ```
 
 ## Validation du schéma

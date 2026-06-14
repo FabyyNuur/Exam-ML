@@ -16,5 +16,6 @@ uvicorn[standard]>=0.23.0
 pydantic>=2.0.0
 python-multipart>=0.0.6
 
-# Visualisation (export charts dashboard)
+# Visualisation (export charts dashboard + PNG rapports PDF)
 plotly>=5.15.0
+kaleido>=0.2.1

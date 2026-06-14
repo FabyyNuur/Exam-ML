@@ -21,7 +21,8 @@ COPY reports/figures/mlops_monitoring.png reports/figures/mlops_monitoring.png
 COPY data/raw/data_cluster.csv data/raw/data_cluster.csv
 COPY data/samples/ data/samples/
 
-RUN python scripts/create_ci_models.py && python scripts/export_analytics.py
+RUN python scripts/create_ci_models.py \
+    && python scripts/export_analytics.py
 
 EXPOSE 8000
 

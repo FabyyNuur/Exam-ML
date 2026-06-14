@@ -15,7 +15,7 @@ Exam-ML/
 ├── frontend/                   # Dashboard React (Vite + Tailwind)
 ├── scripts/
 │   ├── train_and_export.py     # Entraînement + export des modèles
-│   ├── export_analytics.py     # Export JSON Recharts + figures Plotly
+│   ├── export_analytics.py     # Export JSON Recharts, Plotly JSON et PNG rapports PDF
 │   └── create_ci_models.py     # Modèles légers pour la CI
 ├── src/                        # Code mutualisé (preprocessing, training, viz)
 ├── mlops/
@@ -24,7 +24,7 @@ Exam-ML/
 │   └── pipeline.py             # Pipeline reproductible CLI
 ├── tests/                      # Tests unitaires et API
 ├── reports/
-│   ├── figures/                # PNG notebooks (gitignorés) + mlops_monitoring.png
+│   ├── figures/                # PNG rapports PDF (générés par export_analytics.py, gitignorés)
 │   └── analytics/              # JSON Recharts + plotly/*.json (gitignoré, voir export ci-dessous)
 └── docs/
     ├── rapport_technique.md
@@ -52,7 +52,7 @@ Après clone, générer les analytics pour le dashboard (nécessite `data/raw/da
 
 ```bash
 python scripts/create_ci_models.py   # ou train_and_export.py pour des modèles réels
-python scripts/export_analytics.py
+python scripts/export_analytics.py   # génère aussi reports/figures/*.png pour les rapports PDF
 ```
 
 Pour l'API seule (sans notebooks ni tests) : `pip install -r requirements.txt`
@@ -79,7 +79,7 @@ Et dans `reports/analytics/` :
 Pour régénérer les analytics sans réentraîner les modèles (Python ≥ 3.10 recommandé) :
 
 ```bash
-python3.12 scripts/export_analytics.py
+python3.12 scripts/export_analytics.py   # JSON + PNG rapports PDF
 ```
 
 Les figures Plotly du dashboard sont produites par les builders `src/charts/` (`fraud.py`, `segmentation.py`) avec **échantillonnage automatique** (`src/charts/sampling.py`) pour garder les JSON légers. Les notebooks `01` et `02` appellent ces mêmes builders via `show_figure()` — ne pas reconstruire de histogrammes ou scatter sur le dataset brut.
@@ -175,7 +175,7 @@ Rapports HTML format A4 par exercice, alimentés dynamiquement par l’API (`/co
 
 **Accès :** bouton **RAPPORT PDF** dans les modules Fraude/Segmentation, ou section Livrables → « Voir tous les rapports ».
 
-**Export PDF :** bouton « Télécharger PDF » → dialogue d’impression du navigateur → « Enregistrer au format PDF ».
+**Export PDF :** bouton « Télécharger PDF » → dialogue d’impression du navigateur → « Enregistrer au format PDF ». Les graphiques sont chargés depuis l’API (`/figures/*.png`) — lancer l’API et exécuter `export_analytics.py` pour générer les PNG (automatique au build Render/Docker).
 
 ## Modules du dashboard
 
@@ -254,7 +254,7 @@ Tout le projet se déploie sur **Render** via le blueprint [`render.yaml`](rende
 
 1. Connecter le dépôt GitHub à Render → **New Blueprint**
 2. Render crée les deux services à partir de `render.yaml`
-3. Le build API exécute `create_ci_models.py` + `export_analytics.py`
+3. Le build API exécute `create_ci_models.py` + `export_analytics.py` (JSON dashboard + PNG rapports PDF)
 4. Le build frontend injecte `VITE_API_URL=https://exam-ml-api.onrender.com`
 
 Variables déjà configurées dans le blueprint :

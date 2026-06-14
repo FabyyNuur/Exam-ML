@@ -1,17 +1,19 @@
-"""Export des figures Plotly en JSON pour le dashboard React."""
+"""Export des figures Plotly en JSON pour le dashboard React et PNG pour les rapports PDF."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Callable
 
 import plotly.graph_objects as go
 
-from src.utils import apply_plotly_theme
+from src.utils import apply_plotly_theme, save_figure
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 ANALYTICS_DIR = ROOT / "reports" / "analytics"
 PLOTLY_DIR = ANALYTICS_DIR / "plotly"
+FIGURES_DIR = ROOT / "reports" / "figures"
 
 
 def export_plotly_chart(fig: go.Figure, chart_id: str) -> None:
@@ -79,4 +81,73 @@ def export_all_charts(
             fig.update_layout(title=f"{chart_id} — données indisponibles", height=400)
             export_plotly_chart(fig, chart_id)
         exported.append(chart_id)
+    return exported
+
+
+def _placeholder_figure(chart_id: str, reason: str = "") -> go.Figure:
+    fig = go.Figure()
+    subtitle = f" — {reason}" if reason else ""
+    fig.update_layout(
+        title=f"{chart_id}{subtitle}",
+        height=450,
+        width=1000,
+        annotations=[
+            dict(
+                text="Figure non disponible (données ou modèle manquant)",
+                xref="paper",
+                yref="paper",
+                x=0.5,
+                y=0.5,
+                showarrow=False,
+                font=dict(size=14, color="#64748B"),
+            )
+        ],
+    )
+    return fig
+
+
+def _figure_dimensions(fig: go.Figure) -> tuple[int, int]:
+    width = fig.layout.width
+    height = fig.layout.height
+    return int(width or 1000), int(height or 600)
+
+
+def export_report_figures(
+    fraud_path: str | Path,
+    cluster_path: str | Path,
+    models_dir: str | Path,
+    figures_dir: str | Path | None = None,
+) -> list[str]:
+    """Exporte les PNG référencés par les rapports PDF (/figures/*)."""
+    from src.charts import fraud, segmentation
+
+    out_dir = Path(figures_dir) if figures_dir else FIGURES_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    fraud_path = Path(fraud_path)
+    cluster_path = Path(cluster_path)
+    models_dir = Path(models_dir)
+
+    builders: dict[str, Callable[[], go.Figure]] = {}
+    if fraud_path.is_file():
+        builders.update(fraud.all_charts(fraud_path, models_dir))
+    if cluster_path.is_file():
+        builders.update(segmentation.all_charts(cluster_path, models_dir))
+    if "ex1_nn_training" not in builders:
+        builders["ex1_nn_training"] = fraud.build_nn_training
+
+    exported: list[str] = []
+    for chart_id, builder in builders.items():
+        png_path = out_dir / f"{chart_id}.png"
+        try:
+            fig = builder()
+            width, height = _figure_dimensions(fig)
+            save_figure(fig, str(png_path), width=width, height=height)
+            print(f"Figure PNG exportée : {png_path}")
+            exported.append(chart_id)
+        except Exception as exc:
+            print(f"Figure {chart_id} ignorée : {exc}")
+            fig = _placeholder_figure(chart_id, str(exc)[:80])
+            save_figure(fig, str(png_path), width=1000, height=450)
+            exported.append(chart_id)
     return exported
