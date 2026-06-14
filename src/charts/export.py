@@ -112,21 +112,12 @@ def _figure_dimensions(fig: go.Figure) -> tuple[int, int]:
     return int(width or 1000), int(height or 600)
 
 
-def export_report_figures(
-    fraud_path: str | Path,
-    cluster_path: str | Path,
-    models_dir: str | Path,
-    figures_dir: str | Path | None = None,
-) -> list[str]:
-    """Exporte les PNG référencés par les rapports PDF (/figures/*)."""
+def _report_figure_builders(
+    fraud_path: Path,
+    cluster_path: Path,
+    models_dir: Path,
+) -> dict[str, Callable[[], go.Figure]]:
     from src.charts import fraud, segmentation
-
-    out_dir = Path(figures_dir) if figures_dir else FIGURES_DIR
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    fraud_path = Path(fraud_path)
-    cluster_path = Path(cluster_path)
-    models_dir = Path(models_dir)
 
     builders: dict[str, Callable[[], go.Figure]] = {}
     if fraud_path.is_file():
@@ -135,6 +126,44 @@ def export_report_figures(
         builders.update(segmentation.all_charts(cluster_path, models_dir))
     if "ex1_nn_training" not in builders:
         builders["ex1_nn_training"] = fraud.build_nn_training
+    return builders
+
+
+def generate_report_figure(
+    chart_id: str,
+    output_path: str | Path,
+    fraud_path: str | Path,
+    cluster_path: str | Path,
+    models_dir: str | Path,
+) -> bool:
+    """Génère un PNG à la demande (rapports PDF /figures/*)."""
+    output_path = Path(output_path)
+    builders = _report_figure_builders(Path(fraud_path), Path(cluster_path), Path(models_dir))
+    builder = builders.get(chart_id)
+    if builder is None:
+        return False
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        fig = builder()
+        width, height = _figure_dimensions(fig)
+        save_figure(fig, str(output_path), width=width, height=height)
+    except Exception as exc:
+        fig = _placeholder_figure(chart_id, str(exc)[:80])
+        save_figure(fig, str(output_path), width=1000, height=450)
+    return output_path.is_file()
+
+
+def export_report_figures(
+    fraud_path: str | Path,
+    cluster_path: str | Path,
+    models_dir: str | Path,
+    figures_dir: str | Path | None = None,
+) -> list[str]:
+    """Exporte les PNG référencés par les rapports PDF (/figures/*)."""
+    out_dir = Path(figures_dir) if figures_dir else FIGURES_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    builders = _report_figure_builders(Path(fraud_path), Path(cluster_path), Path(models_dir))
 
     exported: list[str] = []
     for chart_id, builder in builders.items():

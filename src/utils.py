@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Optional, Tuple
 
 import numpy as np
@@ -80,8 +81,30 @@ def apply_plotly_theme(fig: go.Figure) -> go.Figure:
 
 
 def save_figure(fig: go.Figure, path: str, width: int = 1000, height: int = 600) -> go.Figure:
-    """Exporte la figure en PNG (nécessite kaleido) ou HTML en secours."""
+    """Exporte la figure en PNG (kaleido) ; ne produit jamais de .html pour un chemin .png."""
     fig = apply_plotly_theme(fig)
+    if path.lower().endswith(".png"):
+        try:
+            fig.write_image(path, width=width, height=height, scale=2)
+        except Exception:
+            stub = go.Figure()
+            stub.update_layout(
+                title=dict(text=Path(path).stem, x=0.5, xanchor="center"),
+                annotations=[
+                    dict(
+                        text="Export PNG indisponible",
+                        xref="paper",
+                        yref="paper",
+                        x=0.5,
+                        y=0.5,
+                        showarrow=False,
+                    )
+                ],
+                width=width,
+                height=height,
+            )
+            stub.write_image(path, width=width, height=height, scale=2)
+        return fig
     try:
         fig.write_image(path, width=width, height=height, scale=2)
     except Exception:
