@@ -70,9 +70,6 @@ def _cluster_context(cluster_path: str | Path, models_dir: str | Path) -> dict:
 
     km = KMeans(n_clusters=best_k, random_state=RANDOM_STATE, n_init=10)
     kmeans_labels = km.fit_predict(X_scaled)
-    centroids = pd.DataFrame(
-        scaler.inverse_transform(km.cluster_centers_), columns=CLUSTER_API_COLUMNS
-    )
 
     km_business = KMeans(n_clusters=business_k, random_state=RANDOM_STATE, n_init=10)
     business_labels = km_business.fit_predict(X_scaled)
