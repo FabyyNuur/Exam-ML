@@ -202,26 +202,6 @@ Rapports HTML format A4 par exercice, alimentés dynamiquement par l’API (`/co
 pytest tests/ -v
 ```
 
-## Dépannage
-
-### `ImportError: numpy.core.multiarray failed to import` / NumPy 2.x
-
-Cause : uvicorn lancé depuis **conda (base)** avec NumPy 2.x alors que scipy, xgboost, numexpr ont été compilés pour NumPy 1.x.
-
-Solution :
-```bash
-cd Exam-ML
-bash scripts/run_api.sh
-# ou
-source .venv/bin/activate && uvicorn mlops.api.app:app --reload --port 8000
-```
-
-Si le venv n'existe pas encore :
-```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dev.txt
-```
-
 ## Résultats clés
 
 | Exercice | Meilleur modèle | Métrique principale |
@@ -254,7 +234,7 @@ Tout le projet se déploie sur **Render** via le blueprint [`render.yaml`](rende
 
 1. Connecter le dépôt GitHub à Render → **New Blueprint**
 2. Render crée les deux services à partir de `render.yaml`
-3. Le build API exécute `create_ci_models.py` + `export_analytics.py` (JSON dashboard + PNG rapports PDF)
+3. Le build API exécute `plotly_get_chrome`, puis `create_ci_models.py` + `export_analytics.py` (JSON dashboard + PNG rapports PDF)
 4. Le build frontend injecte `VITE_API_URL=https://exam-ml-api.onrender.com`
 
 Variables déjà configurées dans le blueprint :
