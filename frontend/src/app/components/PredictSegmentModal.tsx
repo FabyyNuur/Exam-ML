@@ -87,7 +87,7 @@ function ManualSegmentForm() {
         centroïdes Premium (~71 k€ / ~1 233 €) et Digital (~39 k€ / ~178 €).
       </p>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {fields.map(({ key, label }) => (
           <div key={key}>
             <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase">

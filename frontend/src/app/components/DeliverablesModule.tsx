@@ -12,21 +12,22 @@ const REPO_ITEMS = [
 
 export function DeliverablesModule() {
   return (
-    <div className="w-full h-full flex flex-col gap-6 p-6 relative z-10">
-      <div className="flex flex-col gap-6 border-b border-slate-300/50 pb-4">
+    <div className="w-full h-full flex flex-col gap-4 sm:gap-6 p-0 sm:p-2 relative z-10 min-w-0">
+      <div className="flex flex-col gap-4 sm:gap-6 border-b border-slate-300/50 pb-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 tracking-wide flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
-              <FileCode2 size={28} />
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-wide flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-emerald-100 text-emerald-600 rounded-lg shrink-0">
+              <FileCode2 size={24} className="sm:hidden" />
+              <FileCode2 size={28} className="hidden sm:block" />
             </div>
             LIVRABLES DU PROJET
           </h2>
-          <p className="text-slate-500 font-medium mt-2">Dépôt GitHub & Documentation Finale</p>
+          <p className="text-slate-500 font-medium mt-1 sm:mt-2 text-sm sm:text-base">Dépôt GitHub & Documentation Finale</p>
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-0 overflow-y-auto">
-        <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 min-h-0 overflow-y-auto">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-8 shadow-sm min-w-0">
           <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
             <Github className="text-emerald-600" /> STRUCTURE Exam-ML
           </h3>
@@ -43,7 +44,7 @@ export function DeliverablesModule() {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-8 shadow-sm min-w-0">
           <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
             <Presentation className="text-emerald-600" /> SOUMISSIONS FINALES
           </h3>

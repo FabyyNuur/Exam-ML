@@ -37,7 +37,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-100 via-indigo-50 to-fuchsia-50 text-slate-800 overflow-hidden font-sans selection:bg-indigo-500/30">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-sky-100 via-indigo-50 to-fuchsia-50 text-slate-800 overflow-x-hidden font-sans selection:bg-indigo-500/30">
       <HudFrame
         title="PROJET ML M2CDSD // TABLEAU DE BORD"
         onHome={() => setActiveModule(null)}
@@ -51,7 +51,7 @@ export function DashboardPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.2, filter: 'blur(10px)' }}
               transition={{ duration: 0.5 }}
-              className="absolute inset-0 flex items-center justify-center"
+              className="absolute inset-0 flex items-start md:items-center justify-center overflow-y-auto p-3 sm:p-4"
             >
               <Hub onSelect={setActiveModule} />
             </motion.div>
@@ -64,7 +64,7 @@ export function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -50 }}
               transition={{ duration: 0.5 }}
-              className="absolute inset-0 p-8 pt-24"
+              className="absolute inset-0 p-3 sm:p-6 lg:p-8 pt-16 sm:pt-20 lg:pt-24 overflow-y-auto"
             >
               <FraudModule />
             </motion.div>
@@ -77,7 +77,7 @@ export function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -50 }}
               transition={{ duration: 0.5 }}
-              className="absolute inset-0 p-8 pt-24"
+              className="absolute inset-0 p-3 sm:p-6 lg:p-8 pt-16 sm:pt-20 lg:pt-24 overflow-y-auto"
             >
               <SegmentationModule />
             </motion.div>
@@ -90,7 +90,7 @@ export function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -50 }}
               transition={{ duration: 0.5 }}
-              className="absolute inset-0 p-8 pt-24"
+              className="absolute inset-0 p-3 sm:p-6 lg:p-8 pt-16 sm:pt-20 lg:pt-24 overflow-y-auto"
             >
               <MLOpsModule />
             </motion.div>
@@ -103,7 +103,7 @@ export function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -50 }}
               transition={{ duration: 0.5 }}
-              className="absolute inset-0 p-8 pt-24"
+              className="absolute inset-0 p-3 sm:p-6 lg:p-8 pt-16 sm:pt-20 lg:pt-24 overflow-y-auto"
             >
               <DeliverablesModule />
             </motion.div>

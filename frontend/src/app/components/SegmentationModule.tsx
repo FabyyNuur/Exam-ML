@@ -227,43 +227,44 @@ export function SegmentationModule() {
   ] as const;
 
   return (
-    <div className="w-full h-full flex flex-col gap-6 p-6 relative z-10">
-      <div className="flex flex-col gap-6 border-b border-slate-300/50 pb-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800 tracking-wide flex items-center gap-3">
-              <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
-                <Users size={28} />
+    <div className="w-full h-full flex flex-col gap-4 sm:gap-6 p-0 sm:p-2 relative z-10 min-w-0">
+      <div className="flex flex-col gap-4 sm:gap-6 border-b border-slate-300/50 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-wide flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-indigo-100 text-indigo-600 rounded-lg shrink-0">
+                <Users size={24} className="sm:hidden" />
+                <Users size={28} className="hidden sm:block" />
               </div>
-              SEGMENTATION CLIENT
+              <span className="truncate">SEGMENTATION CLIENT</span>
             </h2>
-            <p className="text-slate-500 font-medium mt-2">
+            <p className="text-slate-500 font-medium mt-1 sm:mt-2 text-sm sm:text-base">
               Apprentissage Non Supervisé / Clustering Comportemental
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
             <Link
               to="/rapport/segmentation"
-              className="flex items-center gap-2 bg-white/80 backdrop-blur-md border border-white/60 text-slate-700 px-4 py-2 font-medium text-sm rounded-lg hover:bg-white hover:text-indigo-600 transition-all shadow-sm"
+              className="flex items-center gap-1.5 sm:gap-2 bg-white/80 backdrop-blur-md border border-white/60 text-slate-700 px-3 sm:px-4 py-2 font-medium text-xs sm:text-sm rounded-lg hover:bg-white hover:text-indigo-600 transition-all shadow-sm"
             >
-              <FileText size={16} /> RAPPORT PDF
+              <FileText size={16} /> <span className="hidden sm:inline">RAPPORT </span>PDF
             </Link>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 bg-white/80 backdrop-blur-md border border-white/60 text-slate-700 px-4 py-2 font-medium text-sm rounded-lg hover:bg-white hover:text-indigo-600 transition-all shadow-sm"
+              className="flex items-center gap-1.5 sm:gap-2 bg-white/80 backdrop-blur-md border border-white/60 text-slate-700 px-3 sm:px-4 py-2 font-medium text-xs sm:text-sm rounded-lg hover:bg-white hover:text-indigo-600 transition-all shadow-sm"
             >
-              <UploadCloud size={16} /> TESTER LE MODÈLE
+              <UploadCloud size={16} /> <span className="hidden sm:inline">TESTER LE </span>MODÈLE
             </button>
             <ApiStatusBadge />
           </div>
         </div>
 
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as Tab)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap shrink-0 ${
                 activeTab === tab.id
                   ? "bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm"
                   : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"

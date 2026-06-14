@@ -18,14 +18,14 @@ export function ReportsHub() {
 
   return (
     <div className="report-shell min-h-screen">
-      <div className="no-print max-w-4xl mx-auto px-6 py-8">
+      <div className="no-print max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Link to="/" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
           ← Retour au tableau de bord
         </Link>
 
         <div className="mt-6 mb-8">
-          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
-            <FileText className="text-indigo-600" size={32} />
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 flex items-center gap-2 sm:gap-3">
+            <FileText className="text-indigo-600 shrink-0" size={28} />
             Rapports analytiques
           </h1>
           <p className="text-slate-500 mt-2 font-medium">

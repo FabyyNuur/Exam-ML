@@ -96,7 +96,7 @@ function ManualFraudForm() {
         des fraudes dans le jeu d&apos;entraînement — testez différents montants et soldes.
       </p>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {field('step', 'Step')}
         {field('type', 'Type', 'select')}
         {field('amount', 'Montant')}
@@ -129,7 +129,7 @@ function ManualFraudForm() {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 text-center text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center text-xs">
             <div className="bg-white/80 rounded-lg px-2 py-2 border">
               <span className="text-slate-500 block">Probabilité</span>
               <strong className="text-base">{probaPct} %</strong>
@@ -150,7 +150,7 @@ function ManualFraudForm() {
               : `Probabilité ${probaPct} % < seuil ${FRAUD_THRESHOLD_PCT} % → transaction classée légitime ; surveiller si risque « moyen » ou « élevé ».`}
           </p>
 
-          <div className="grid grid-cols-2 gap-2 text-xs border-t pt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs border-t pt-3">
             <div>
               <span className="text-slate-500">Type : </span>
               <strong>{form.type}</strong>
