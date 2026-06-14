@@ -1,0 +1,17 @@
+.venv
+venv
+__pycache__
+.pytest_cache
+.git
+.gitignore
+mlruns
+mlflow.db
+mlartifacts
+frontend/node_modules
+frontend/dist
+notebooks/.ipynb_checkpoints
+data/raw/detection_fraude.csv
+reports/figures/*
+!reports/figures/mlops_monitoring.png
+*.pyc
+.DS_Store

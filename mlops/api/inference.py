@@ -11,7 +11,13 @@ from typing import Any
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 
 from mlops.api.schemas import (
     MAX_UPLOAD_BYTES,
@@ -251,6 +257,7 @@ class ModelRegistry:
             tn = int(((y_true == 0) & (y_pred == 0)).sum())
             fn = int(((y_true == 1) & (y_pred == 0)).sum())
             evaluation = FraudBatchEvaluation(
+                accuracy=float(accuracy_score(y_true, y_pred)),
                 roc_auc=float(roc_auc_score(y_true, probas)) if len(np.unique(y_true)) > 1 else 0.0,
                 precision=float(precision_score(y_true, y_pred, zero_division=0)),
                 recall=float(recall_score(y_true, y_pred, zero_division=0)),

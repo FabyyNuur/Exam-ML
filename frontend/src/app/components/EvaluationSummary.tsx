@@ -13,6 +13,7 @@ export function EvaluationSummary({ evaluation }: EvaluationSummaryProps) {
       <p className="font-semibold text-slate-800 text-sm mb-3">Évaluation (colonne isFraud)</p>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         {[
+          { label: 'Accuracy', value: evaluation.accuracy.toFixed(3) },
           { label: 'ROC-AUC', value: evaluation.roc_auc.toFixed(3) },
           { label: 'Precision', value: evaluation.precision.toFixed(3) },
           { label: 'Recall', value: evaluation.recall.toFixed(3) },

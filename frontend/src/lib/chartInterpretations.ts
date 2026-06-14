@@ -114,6 +114,24 @@ export function interpretClusterProfile(
     );
   }
 
+  if (profile.name === "Promo-sensible") {
+    return (
+      `${fmt(profile.count)} clients (${profile.pct} %) : revenu ${Math.round(profile.income).toLocaleString("fr-FR")} €, ` +
+      `panier ${Math.round(profile.totalSpend).toLocaleString("fr-FR")} €, ` +
+      `${profile.storePurchases.toFixed(1)} achats magasin en moyenne. ` +
+      `Taux d'acceptation campagne ${profile.campaignAcceptPct.toFixed(0)} %. ` +
+      `→ Coupons ciblés et offres promotionnelles sur les canaux magasin.`
+    );
+  }
+
+  if (profile.name === "Dormant") {
+    return (
+      `${fmt(profile.count)} clients (${profile.pct} %) : récence ${Math.round(profile.recency)} j, ` +
+      `panier ${Math.round(profile.totalSpend).toLocaleString("fr-FR")} €. ` +
+      `→ Campagne de réactivation (email, offre de retour) plutôt que promotions agressives.`
+    );
+  }
+
   return (
     `${fmt(profile.count)} clients (${profile.pct} %) : revenu ${Math.round(profile.income).toLocaleString("fr-FR")} €, ` +
     `panier ${Math.round(profile.totalSpend).toLocaleString("fr-FR")} €.`
@@ -127,42 +145,45 @@ export function interpretClusterProfilesSummary(
   if (stats.length < 2) {
     return "Profils clients indisponibles — exécuter le pipeline analytics.";
   }
-  const premium = findProfile(stats, "Premium") ?? stats[0];
-  const digital = findProfile(stats, "Digital") ?? stats[1];
+  const names = stats.map((s) => s.name).join(", ");
   const sil = meta?.silhouette?.toFixed(2) ?? "—";
-  const ratio = spendRatio(premium, digital);
+  const peak =
+    meta?.silhouette_peak_k != null && meta.silhouette_at_peak_k != null
+      ? ` (pic Silhouette ${meta.silhouette_at_peak_k.toFixed(2)} à k=${meta.silhouette_peak_k})`
+      : "";
   return (
-    `K-Means avec k=${meta?.best_k ?? 2} sépare deux profils (Silhouette ${sil}) : ` +
-    `Premium (${fmt(premium.count)}, panier ${Math.round(premium.totalSpend).toLocaleString("fr-FR")} €) ` +
-    `vs Digital (${fmt(digital.count)}, panier ${Math.round(digital.totalSpend).toLocaleString("fr-FR")} €, ≈ ${ratio}× moins). ` +
-    `La séparation repose sur le revenu et la dépense totale, pas sur l'âge ni la récence (≈ ${Math.round(premium.recency)} j pour les deux).`
+    `K-Means avec k=${meta?.best_k ?? 4} identifie ${stats.length} profils — ${names} — ` +
+    `(Silhouette ${sil}${peak}). Le pic statistique à k=2 est documenté ; k=4 est retenu pour l'actionnabilité marketing ` +
+    `et la couverture des quatre archétypes demandés par le sujet.`
   );
 }
 
 export function interpretClusterHeatmapProfiles(
   stats: ClusterProfileStats[],
 ): string {
+  if (stats.length < 2) return "Profils par cluster indisponibles.";
   const premium = findProfile(stats, "Premium");
-  const digital = findProfile(stats, "Digital");
-  if (!premium || !digital) return "Profils par cluster indisponibles.";
-  return (
-    `Premium domine sur Income et TotalSpend (${Math.round(premium.income).toLocaleString("fr-FR")} € vs ${Math.round(digital.income).toLocaleString("fr-FR")} € ; ` +
-    `panier ${Math.round(premium.totalSpend).toLocaleString("fr-FR")} € vs ${Math.round(digital.totalSpend).toLocaleString("fr-FR")} €). ` +
-    `Digital se distingue surtout par un panier faible et plus d'enfants (${digital.children.toFixed(1)} vs ${premium.children.toFixed(1)}), ` +
-    `pas par davantage d'achats web.`
-  );
+  const dormant = findProfile(stats, "Dormant");
+  const promo = findProfile(stats, "Promo-sensible");
+  if (premium && dormant) {
+    return (
+      `Premium domine sur Income et TotalSpend ; Dormant affiche la récence la plus élevée ` +
+      `(≈ ${Math.round(dormant.recency)} j) et un panier plus faible. ` +
+      `${promo ? `Promo-sensible se distingue par ${promo.campaignAcceptPct.toFixed(0)} % d'acceptation campagne.` : ""} ` +
+      `Les quatre centroïdes couvrent des axes comportementaux complémentaires.`
+    );
+  }
+  return "Les centroïdes normalisés mettent en évidence des profils opposés sur revenu, dépenses, récence et réponse aux campagnes.";
 }
 
 export function interpretClusterRadarProfiles(
   stats: ClusterProfileStats[],
 ): string {
-  const premium = findProfile(stats, "Premium");
-  const digital = findProfile(stats, "Digital");
-  if (!premium || !digital) return "Radar des profils indisponible.";
+  if (stats.length < 2) return "Radar des profils indisponible.";
   return (
-    `Le radar confirme un écart global : Premium surperforme sur revenu, dépenses et fréquence d'achat ; ` +
-    `Digital est plus proche de 0 sur ces axes mais plus élevé sur le nombre d'enfants. ` +
-    `Les deux profils restent distincts sur plusieurs dimensions — le découpage justifie des parcours marketing séparés.`
+    `Le radar compare ${stats.length} profils sur revenu, dépenses, fréquence d'achat et récence. ` +
+    `Premium surperforme sur la valeur ; Promo-sensible et Digital se situent sur des niveaux intermédiaires ; ` +
+    `Dormant est marqué par une faible activité récente — le découpage justifie des parcours marketing séparés.`
   );
 }
 
@@ -191,40 +212,55 @@ export function interpretClusterBusinessRecommendations(
 ): string[] {
   const premium = findProfile(stats, "Premium");
   const digital = findProfile(stats, "Digital");
-  if (!premium || !digital) {
+  const promo = findProfile(stats, "Promo-sensible");
+  const dormant = findProfile(stats, "Dormant");
+  const recs: string[] = [];
+  if (premium) {
+    recs.push(
+      `Premium (${fmt(premium.count)} clients) : fidélité haut de gamme, cross-sell vins/viandes, pas de promotions agressives.`,
+    );
+  }
+  if (digital) {
+    recs.push(
+      `Digital (${fmt(digital.count)} clients) : offres web ciblées, parcours app mobile, sans envoi massif de coupons.`,
+    );
+  }
+  if (promo) {
+    recs.push(
+      `Promo-sensible (${fmt(promo.count)} clients, ${promo.campaignAcceptPct.toFixed(0)} % d'acceptation) : coupons et offres limitées dans le temps.`,
+    );
+  }
+  if (dormant) {
+    recs.push(
+      `Dormant (${fmt(dormant.count)} clients, récence ≈ ${Math.round(dormant.recency)} j) : campagne de réactivation par email ou SMS.`,
+    );
+  }
+  if (!recs.length) {
     return [
       "Personnaliser les campagnes par profil cluster plutôt qu'un envoi massif.",
       "Recalculer les segments régulièrement et suivre la Silhouette en production.",
     ];
   }
-  const sorted = [...stats].sort(
-    (a, b) => b.campaignAcceptPct - a.campaignAcceptPct,
+  recs.push(
+    `Exploitation : recalcul mensuel des segments et suivi Silhouette (≈ ${meta?.silhouette?.toFixed(2) ?? "—"} à k=${meta?.best_k ?? 4}).`,
   );
-  const mostReceptive = sorted[0];
-  return [
-    `Premium (${fmt(premium.count)} clients, panier ${Math.round(premium.totalSpend).toLocaleString("fr-FR")} €) : programme fidélité haut de gamme, cross-sell vins/viandes (≈ ${Math.round(premium.wines)} € / ${Math.round(premium.meat)} €), pas de promotions agressives.`,
-    `Digital (${fmt(digital.count)} clients, panier ${Math.round(digital.totalSpend).toLocaleString("fr-FR")} €) : offres accessibles ciblées, sans envoi massif de coupons aux ${fmt(digital.count)} clients à faible panier.`,
-    `${mostReceptive.name} répond le mieux aux campagnes (${mostReceptive.campaignAcceptPct.toFixed(0)} % d'acceptation) — prioriser le budget promo sur ce segment.`,
-    `Exploitation : recalcul mensuel des segments et suivi de la Silhouette (≈ ${meta?.silhouette?.toFixed(2) ?? "—"}) pour détecter une dérive avant qu'elle n'invalide le ciblage.`,
-  ];
+  return recs;
 }
 
 export function interpretClusterBusinessSynthesis(
   stats: ClusterProfileStats[],
   meta: ClusterMetadata | null | undefined,
 ): string[] {
-  const premium = findProfile(stats, "Premium");
-  const digital = findProfile(stats, "Digital");
-  if (!premium || !digital) {
+  const names = stats.map((s) => `${s.name} (${s.pct} %)`).join(", ");
+  if (!stats.length) {
     return [
       "Segmenter le portefeuille en profils homogènes permet de concentrer le budget marketing sur les clients les plus réceptifs.",
     ];
   }
-  const ratio = spendRatio(premium, digital);
   return [
-    `Le clustering (k=${meta?.best_k ?? 2}, Silhouette ≈ ${meta?.silhouette?.toFixed(2) ?? "—"}) distingue deux profils actionnables : Premium (${premium.pct} %, panier ${Math.round(premium.totalSpend).toLocaleString("fr-FR")} €) et Digital (${digital.pct} %, panier ${Math.round(digital.totalSpend).toLocaleString("fr-FR")} €, ≈ ${ratio}× moins).`,
-    `Premium concentre la valeur (revenu ${Math.round(premium.income).toLocaleString("fr-FR")} €, vins ${Math.round(premium.wines).toLocaleString("fr-FR")} €) ; Digital est le segment masse (plus d'enfants : ${digital.children.toFixed(1)} vs ${premium.children.toFixed(1)}), sans sur-représentation web.`,
-    `Même budget marketing, meilleur ROI : fidélité et cross-sell premium d'un côté, offres ciblées et mesurées de l'autre — plutôt qu'une campagne unique à toute la base (${fmt((premium.count + digital.count))} clients).`,
+    `Le clustering (k=${meta?.best_k ?? 4}, Silhouette ≈ ${meta?.silhouette?.toFixed(2) ?? "—"}) distingue quatre profils : ${names}.`,
+    `Le pic Silhouette à k=${meta?.silhouette_peak_k ?? 2} est documenté ; k=4 est retenu pour couvrir Premium, Digital, Promo-sensible et Dormant.`,
+    `Même budget marketing, meilleur ROI : actions différenciées par profil plutôt qu'une campagne unique à toute la base.`,
   ];
 }
 
@@ -283,6 +319,7 @@ export function interpretFraudTestMetrics(
   meta: FraudMetadata | null | undefined,
 ): string {
   if (!meta) return "Métriques test indisponibles — modèle non entraîné ou metadata absent.";
+  const acc = (meta.accuracy * 100).toFixed(1);
   const roc = (meta.roc_auc * 100).toFixed(1);
   const recall = (meta.recall * 100).toFixed(1);
   const prec = (meta.precision * 100).toFixed(1);
@@ -292,9 +329,9 @@ export function interpretFraudTestMetrics(
       ? ` (CV ROC-AUC ${(meta.cv_roc_auc_mean * 100).toFixed(1)} %).`
       : ".";
   return (
-    `${meta.model_name.toUpperCase()} au seuil 30 % : ROC-AUC ${roc} %, recall ${recall} %, ` +
-    `precision ${prec} %, F1 ${f1} %${cv} ` +
-    `Le recall prioritaire réduit les fraudes non détectées ; la precision modérée s'explique par la faible proportion de fraudes (≈ 0,11 %).`
+    `${meta.model_name.toUpperCase()} au seuil 30 % : accuracy ${acc} % (biaisée par le déséquilibre), ` +
+    `ROC-AUC ${roc} %, recall ${recall} %, precision ${prec} %, F1 ${f1} %${cv} ` +
+    `Le recall prioritaire réduit les fraudes non détectées ; l'accuracy élevée masque les faux négatifs sur une base à 0,11 % de fraudes.`
   );
 }
 
@@ -509,8 +546,7 @@ export function interpretClusterPca(
   const sil = clusterMeta?.silhouette?.toFixed(2) ?? "—";
   const sizes = clusterCounts.map((c) => `${c.name} n=${fmt(c.count)}`).join(", ");
   return (
-    `${evText}Les nuages ${sizes} se séparent nettement en 2D malgré une Silhouette modérée (${sil}). ` +
-    `k=${clusterMeta?.best_k ?? 2} reste lisible pour le marketing : Premium (revenus/dépenses élevés) ` +
-    `vs Digital (segment masse à panier plus léger).`
+    `${evText}Les nuages ${sizes} se séparent en 2D (Silhouette modérée : ${sil}). ` +
+    `k=${clusterMeta?.best_k ?? 4} couvre Premium, Digital, Promo-sensible et Dormant pour le ciblage marketing.`
   );
 }

@@ -39,6 +39,7 @@ class ConfusionMatrix(BaseModel):
 
 
 class FraudBatchEvaluation(BaseModel):
+    accuracy: float
     roc_auc: float
     precision: float
     recall: float

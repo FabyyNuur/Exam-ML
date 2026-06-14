@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT))
 from src.analytics_export import export_all_analytics  # noqa: E402
 from src.charts.export import export_all_charts, export_plotly_chart  # noqa: E402
 from src.charts.fraud import build_nn_training  # noqa: E402
+from src.constants import DEFAULT_CLUSTER_LABELS, TARGET_CLUSTER_K  # noqa: E402
 from src.models import FRAUD_MODELS, cross_validate_models  # noqa: E402
 from src.analytics_export import _prepare_fraud_matrix  # noqa: E402
 from src.preprocessing import load_fraud_data  # noqa: E402
@@ -26,13 +27,13 @@ def main() -> None:
     metadata_path = ROOT / "models" / "metadata.json"
 
     cv_results = None
-    cluster_labels = {0: "Digital", 1: "Premium"}
-    best_k = 2
+    cluster_labels = dict(DEFAULT_CLUSTER_LABELS)
+    best_k = TARGET_CLUSTER_K
 
     if metadata_path.exists():
         meta = json.loads(metadata_path.read_text(encoding="utf-8"))
         cluster_labels = meta.get("cluster", {}).get("cluster_labels", cluster_labels)
-        best_k = meta.get("cluster", {}).get("best_k", 2)
+        best_k = meta.get("cluster", {}).get("best_k", TARGET_CLUSTER_K)
         if isinstance(cluster_labels, dict):
             cluster_labels = {int(k): v for k, v in cluster_labels.items()}
 

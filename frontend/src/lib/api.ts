@@ -7,6 +7,7 @@ export interface HealthResponse {
 
 export interface FraudMetadata {
   model_name: string;
+  accuracy: number;
   roc_auc: number;
   f1: number;
   precision: number;
@@ -17,6 +18,8 @@ export interface FraudMetadata {
 export interface ClusterMetadata {
   model_name: string;
   best_k: number;
+  silhouette_peak_k?: number;
+  silhouette_at_peak_k?: number;
   silhouette: number;
   davies_bouldin: number;
   cluster_labels: Record<string, string>;
@@ -101,9 +104,7 @@ export interface FraudModelMetric {
   name: string;
   key: string;
   roc: number;
-  precision: number;
-  f1: number;
-  rappel: number;
+  cv_std?: number;
 }
 
 export interface FraudSmoteMetric {
@@ -225,6 +226,7 @@ export interface ConfusionMatrix {
 }
 
 export interface FraudBatchEvaluation {
+  accuracy: number;
   roc_auc: number;
   precision: number;
   recall: number;

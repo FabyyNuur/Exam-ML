@@ -56,8 +56,12 @@ export function DeliverablesModule() {
                 linkLabel: 'Voir tous les rapports',
               },
               {
+                title: 'Documentation',
+                desc: 'docs/rapport_technique.md et docs/presentation.md — synthèse écrite et plan de soutenance.',
+              },
+              {
                 title: 'Présentation',
-                desc: 'docs/presentation.md — synthèse du projet M2 CDSD.',
+                desc: 'docs/presentation.md — slides pour la soutenance orale (~15 min).',
               },
               {
                 title: 'Tableau de Bord Interactif',

@@ -198,7 +198,7 @@ function buildFraudBatchInterpretation(result: FraudBatchResponse): string {
 
   if (evaluation) {
     parts.push(
-      `Évaluation vs isFraud : ROC-AUC ${evaluation.roc_auc.toFixed(3)}, recall ${evaluation.recall.toFixed(3)}, precision ${evaluation.precision.toFixed(3)} — le modèle retrouve ${evaluation.recall * 100}% des fraudes réelles du fichier.`,
+      `Évaluation vs isFraud : accuracy ${evaluation.accuracy.toFixed(3)}, ROC-AUC ${evaluation.roc_auc.toFixed(3)}, recall ${evaluation.recall.toFixed(3)}, precision ${evaluation.precision.toFixed(3)} — le modèle retrouve ${evaluation.recall * 100}% des fraudes réelles du fichier.`,
     );
   } else {
     parts.push(

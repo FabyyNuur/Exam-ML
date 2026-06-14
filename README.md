@@ -182,7 +182,7 @@ Rapports HTML format A4 par exercice, alimentés dynamiquement par l’API (`/co
 | Module | Contenu |
 |---|---|
 | Fraude | EDA, prétraitement, modélisation XGBoost, SHAP, test CSV, rapport PDF |
-| Segmentation | EDA clients, K-Means k=2, profils Premium/Digital, test CSV, rapport PDF |
+| Segmentation | EDA clients, K-Means k=4, profils Premium/Digital/Promo-sensible/Dormant, test CSV, rapport PDF |
 | MLOps | Pipeline, déploiement, monitoring |
 | Livrables | Structure du dépôt et documentation |
 
@@ -226,10 +226,20 @@ pip install -r requirements-dev.txt
 
 | Exercice | Meilleur modèle | Métrique principale |
 |---|---|---|
-| Fraude | XGBoost + SMOTE | ROC-AUC ≈ **0.997**, Recall ≈ **0.97** |
-| Segmentation | K-Means (k=2) | Silhouette ≈ **0.32** |
+| Fraude | XGBoost + SMOTE | ROC-AUC ≈ **0.997**, Recall ≈ **0.97**, Accuracy ≈ **0.999** (biaisée) |
+| Segmentation | K-Means (k=4) | Silhouette pic k=2 ≈ **0.32** ; k=4 pour 4 profils métier |
 
-Profils clients identifiés : **Premium**, **Digital** (k=2 sur features API).
+Profils clients identifiés : **Premium**, **Digital**, **Promo-sensible**, **Dormant** (k=4 sur features API).
+
+## Docker (local)
+
+```bash
+docker compose up --build
+```
+
+API disponible sur http://localhost:8000 (`/health`, `/metadata`, `/docs`).
+
+Pour le dashboard en dev, lancer séparément `cd frontend && npm run dev` (proxy vers :8000).
 
 ## Déploiement cloud
 

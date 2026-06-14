@@ -9,6 +9,7 @@ import pandas as pd
 from imblearn.over_sampling import SMOTE
 from sklearn.cluster import KMeans
 from sklearn.metrics import (
+    accuracy_score,
     davies_bouldin_score,
     f1_score,
     precision_score,
@@ -28,9 +29,9 @@ from src.analytics_export import (
     export_fraud_models,
 )
 from src.charts.export import export_all_charts
-from src.constants import CLUSTER_API_COLUMNS, FRAUD_THRESHOLD
+from src.constants import CLUSTER_API_COLUMNS, FRAUD_THRESHOLD, TARGET_CLUSTER_K
 from src.inference_prep import prepare_cluster_matrix, prepare_fraud_matrix
-from src.models import FRAUD_MODELS, cross_validate_models, log_model_mlflow, save_model
+from src.models import FRAUD_MODELS, cross_validate_models, get_fraud_model, log_model_mlflow, save_model
 from src.preprocessing import load_cluster_data, load_fraud_data
 
 RANDOM_STATE = 42
@@ -83,13 +84,14 @@ def train_fraud_model(
 
     cv_results = cross_validate_models(FRAUD_MODELS, X_train_scaled, y_train)
     best_name = max(cv_results, key=lambda k: cv_results[k]["mean"])
-    model = FRAUD_MODELS[best_name]
+    model = get_fraud_model(best_name)
     model.fit(X_resampled, y_resampled)
 
     y_proba = model.predict_proba(X_test_scaled)[:, 1]
     y_pred = (y_proba >= FRAUD_THRESHOLD).astype(int)
     metrics = {
         "model_name": best_name,
+        "accuracy": float(accuracy_score(y_test, y_pred)),
         "roc_auc": float(roc_auc_score(y_test, y_proba)),
         "f1": float(f1_score(y_test, y_pred)),
         "precision": float(precision_score(y_test, y_pred, zero_division=0)),
@@ -137,16 +139,18 @@ def train_cluster_model(
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_df)
 
-    best_k, best_silhouette = k_min, -1.0
+    silhouette_peak_k, silhouette_at_peak = k_min, -1.0
     for k in range(k_min, k_max + 1):
         km = KMeans(n_clusters=k, random_state=RANDOM_STATE, n_init=10)
         labels = km.fit_predict(X_scaled)
         sil = silhouette_score(X_scaled, labels)
-        if sil > best_silhouette:
-            best_k, best_silhouette = k, sil
+        if sil > silhouette_at_peak:
+            silhouette_peak_k, silhouette_at_peak = k, sil
 
+    best_k = TARGET_CLUSTER_K
     model = KMeans(n_clusters=best_k, random_state=RANDOM_STATE, n_init=10)
     labels = model.fit_predict(X_scaled)
+    best_silhouette = float(silhouette_score(X_scaled, labels))
     db_score = float(davies_bouldin_score(X_scaled, labels))
 
     centroids = pd.DataFrame(
@@ -160,7 +164,9 @@ def train_cluster_model(
     metrics = {
         "model_name": "kmeans",
         "best_k": best_k,
-        "silhouette": float(best_silhouette),
+        "silhouette_peak_k": silhouette_peak_k,
+        "silhouette_at_peak_k": float(silhouette_at_peak),
+        "silhouette": best_silhouette,
         "davies_bouldin": db_score,
         "cluster_labels": cluster_labels,
     }

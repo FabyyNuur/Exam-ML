@@ -2,6 +2,7 @@
 
 import joblib
 from lightgbm import LGBMClassifier
+from sklearn.base import clone
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_score
@@ -19,8 +20,16 @@ FRAUD_MODELS = {
 }
 
 
+def get_fraud_model(name: str):
+    """Retourne une instance non entraînée (évite l'état partagé du registre)."""
+    if name not in FRAUD_MODELS:
+        raise KeyError(f"Modèle fraude inconnu : {name}")
+    return clone(FRAUD_MODELS[name])
+
+
 def train_and_evaluate(model, X_train, y_train, X_test, y_test, model_name="model"):
     """Entraîne un modèle et retourne les prédictions + probabilités."""
+    model = clone(model)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     y_proba = model.predict_proba(X_test)[:, 1] if hasattr(model, "predict_proba") else None

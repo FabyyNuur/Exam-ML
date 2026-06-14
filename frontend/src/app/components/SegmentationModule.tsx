@@ -113,6 +113,8 @@ const CLUSTER_COLORS: Record<string, string> = {
 const PROFILE_CARD_COLORS: Record<string, string> = {
   Premium: "border-violet-200 bg-violet-50/50",
   Digital: "border-sky-200 bg-sky-50/50",
+  "Promo-sensible": "border-fuchsia-200 bg-fuchsia-50/50",
+  Dormant: "border-slate-300 bg-slate-50/50",
 };
 
 function ProfileMetric({
@@ -575,21 +577,18 @@ export function SegmentationModule() {
                 </p>
                 <p>
                   Quatre algorithmes ont été comparés (K-Means, DBSCAN,
-                  Agglomerative, GMM) : K-Means avec k=2 est retenu pour sa
-                  lisibilité métier et la stabilité de ses centroïdes. La
-                  Silhouette (~0,32) indique une séparation acceptable pour un
-                  usage marketing, même si elle reste inférieure à celle d&apos;un
-                  problème de classification supervisée.
+                  Agglomerative, GMM) : K-Means avec k=4 est retenu pour
+                  identifier les quatre profils métier du sujet (Premium,
+                  Digital, Promo-sensible, Dormant), même si le pic de
+                  Silhouette se situe à k=2 (~0,32).
                 </p>
                 <p>
-                  Les deux segments identifiés — Premium (revenus et dépenses
-                  élevés, ~1 233 € de panier) et Digital (segment masse,
-                  ~178 € de panier) — appellent des actions distinctes :
-                  fidélité haut de gamme d&apos;un côté, offres accessibles
-                  ciblées de l&apos;autre. La question à
-                  suivre en production est de savoir si ces profils restent
-                  stables dans le temps ou s&apos;ils nécessitent un
-                  recalcul mensuel des segments.
+                  Les quatre segments — Premium, Digital, Promo-sensible et
+                  Dormant — appellent des actions distinctes : fidélité haut de
+                  gamme, offres web ciblées, coupons promotionnels et campagnes
+                  de réactivation. La question à suivre en production est de
+                  savoir si ces profils restent stables dans le temps ou s&apos;ils
+                  nécessitent un recalcul mensuel des segments.
                 </p>
               </div>
             </motion.div>
@@ -626,7 +625,11 @@ export function SegmentationModule() {
                             ? "text-violet-700"
                             : profile.name === "Digital"
                               ? "text-sky-700"
-                              : "text-indigo-700"
+                              : profile.name === "Promo-sensible"
+                                ? "text-fuchsia-700"
+                                : profile.name === "Dormant"
+                                  ? "text-slate-700"
+                                  : "text-indigo-700"
                         }`}
                       >
                         Profil {profile.name}

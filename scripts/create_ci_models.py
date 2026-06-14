@@ -15,6 +15,7 @@ from xgboost import XGBClassifier
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from src.constants import DEFAULT_CLUSTER_LABELS, TARGET_CLUSTER_K  # noqa: E402
 from src.models import save_model  # noqa: E402
 
 MODELS_DIR = ROOT / "models"
@@ -29,7 +30,7 @@ fraud_model.fit(fraud_scaler.transform(X_fraud), y_fraud)
 
 X_cluster = rng.normal(size=(100, 7))
 cluster_scaler = StandardScaler().fit(X_cluster)
-cluster_model = KMeans(n_clusters=2, random_state=42, n_init=10).fit(
+cluster_model = KMeans(n_clusters=TARGET_CLUSTER_K, random_state=42, n_init=10).fit(
     cluster_scaler.transform(X_cluster)
 )
 
@@ -38,9 +39,11 @@ save_model(fraud_scaler, MODELS_DIR / "fraud_scaler.joblib")
 save_model(cluster_model, MODELS_DIR / "cluster_model.joblib")
 save_model(cluster_scaler, MODELS_DIR / "cluster_scaler.joblib")
 
+cluster_labels = {str(k): v for k, v in DEFAULT_CLUSTER_LABELS.items()}
 metadata = {
     "fraud": {
         "model_name": "xgboost",
+        "accuracy": 0.99,
         "roc_auc": 0.99,
         "cv_roc_auc_mean": 0.996,
         "f1": 0.5,
@@ -49,10 +52,12 @@ metadata = {
     },
     "cluster": {
         "model_name": "kmeans",
-        "best_k": 2,
-        "silhouette": 0.3,
-        "davies_bouldin": 1.2,
-        "cluster_labels": {"0": "Digital", "1": "Premium"},
+        "best_k": TARGET_CLUSTER_K,
+        "silhouette_peak_k": 2,
+        "silhouette_at_peak_k": 0.32,
+        "silhouette": 0.25,
+        "davies_bouldin": 1.35,
+        "cluster_labels": cluster_labels,
     },
 }
 (MODELS_DIR / "metadata.json").write_text(

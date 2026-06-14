@@ -53,6 +53,7 @@ export function buildReportKpis(
   if (reportId === 'fraude' && metadata?.fraud) {
     const m = metadata.fraud;
     return [
+      { label: 'Accuracy', value: m.accuracy.toFixed(3) },
       { label: 'Modèle retenu', value: m.model_name.toUpperCase() },
       { label: 'ROC-AUC', value: m.roc_auc.toFixed(3) },
       { label: 'Recall', value: m.recall.toFixed(2) },

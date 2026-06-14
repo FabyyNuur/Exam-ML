@@ -1,20 +1,25 @@
 {
   "fraud": {
     "model_name": "xgboost",
-    "roc_auc": 0.99,
-    "cv_roc_auc_mean": 0.996,
-    "f1": 0.5,
-    "precision": 0.4,
-    "recall": 0.9
+    "accuracy": 0.9986648546837374,
+    "roc_auc": 0.9965176836748819,
+    "f1": 0.6121883656509696,
+    "precision": 0.4473684210526316,
+    "recall": 0.9692982456140351,
+    "cv_roc_auc_mean": 0.9958872154649351
   },
   "cluster": {
     "model_name": "kmeans",
-    "best_k": 2,
-    "silhouette": 0.3,
-    "davies_bouldin": 1.2,
+    "best_k": 4,
+    "silhouette_peak_k": 2,
+    "silhouette_at_peak_k": 0.31823008346880444,
+    "silhouette": 0.19704019307242415,
+    "davies_bouldin": 1.7896816878703503,
     "cluster_labels": {
+      "3": "Premium",
       "0": "Digital",
-      "1": "Premium"
+      "2": "Promo-sensible",
+      "1": "Dormant"
     }
   }
 }

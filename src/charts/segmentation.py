@@ -25,7 +25,7 @@ from src.charts.sampling import (
     PLOTLY_SAMPLE_SCATTER,
     sample_df,
 )
-from src.constants import CLUSTER_API_COLUMNS
+from src.constants import CLUSTER_API_COLUMNS, DEFAULT_CLUSTER_LABELS, TARGET_CLUSTER_K
 from src.preprocessing import clean_customer_data, engineer_customer_features, load_cluster_data
 from src.training import prepare_cluster_matrix
 from src.utils import COLORS, plot_silhouette
@@ -43,12 +43,12 @@ def _cluster_context(cluster_path: str | Path, models_dir: str | Path) -> dict:
     X_scaled = scaler.fit_transform(X_df)
 
     metadata_path = Path(models_dir) / "metadata.json"
-    best_k = 2
-    cluster_labels: dict[int, str] = {0: "Digital", 1: "Premium"}
+    best_k = TARGET_CLUSTER_K
+    cluster_labels: dict[int, str] = dict(DEFAULT_CLUSTER_LABELS)
     if metadata_path.exists():
         meta = json.loads(metadata_path.read_text(encoding="utf-8"))
         cluster_meta = meta.get("cluster", {})
-        best_k = int(cluster_meta.get("best_k", 2))
+        best_k = int(cluster_meta.get("best_k", TARGET_CLUSTER_K))
         raw_labels = cluster_meta.get("cluster_labels", cluster_labels)
         cluster_labels = {int(k): v for k, v in raw_labels.items()}
 

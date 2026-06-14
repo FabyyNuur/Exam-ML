@@ -124,6 +124,7 @@ export function FraudModule() {
 
   const modelMetrics = fraudMeta
     ? [
+        { name: "Accuracy", value: (fraudMeta.accuracy * 100).toFixed(1) },
         { name: "ROC-AUC", value: (fraudMeta.roc_auc * 100).toFixed(1) },
         { name: "F1", value: (fraudMeta.f1 * 100).toFixed(1) },
         { name: "Précision", value: (fraudMeta.precision * 100).toFixed(1) },

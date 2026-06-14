@@ -47,7 +47,9 @@ def test_metadata(client):
     assert data["fraud"] is not None
     assert data["cluster"] is not None
     assert "roc_auc" in data["fraud"]
+    assert "accuracy" in data["fraud"]
     assert "cluster_labels" in data["cluster"]
+    assert data["cluster"]["best_k"] == 4
 
 
 def test_predict_fraud(client):

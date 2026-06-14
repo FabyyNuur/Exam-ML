@@ -45,6 +45,8 @@ CLUSTER_API_COLUMNS = [
     "Children",
 ]
 
+TARGET_CLUSTER_K = 4
+
 DEFAULT_CLUSTER_LABELS = {
     0: "Digital",
     1: "Premium",

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 from pathlib import Path
 from typing import Callable
 
@@ -18,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 
 from src.charts.sampling import PLOTLY_SAMPLE_HIST, PLOTLY_SAMPLE_SCATTER, sample_df, sample_series
 from src.constants import FRAUD_THRESHOLD
-from src.models import FRAUD_MODELS
+from src.models import FRAUD_MODELS, get_fraud_model
 from src.preprocessing import load_fraud_data
 from src.training import prepare_fraud_matrix
 from src.utils import COLORS, plot_class_distribution, plot_confusion_matrix, plot_roc_curve
@@ -48,7 +47,7 @@ def _fraud_eval_context(fraud_path: str | Path, models_dir: str | Path):
         # Fallback notebook : entraîne XGBoost à la volée si pas de joblib
         smote = SMOTE(random_state=RANDOM_STATE, sampling_strategy=0.1)
         X_resampled, y_resampled = smote.fit_resample(X_train_scaled, y_train)
-        model = FRAUD_MODELS["xgboost"]
+        model = get_fraud_model("xgboost")
         model.fit(X_resampled, y_resampled)
 
     y_proba = model.predict_proba(X_test_scaled)[:, 1]
@@ -214,11 +213,11 @@ def build_roc_curves(fraud_path: str | Path, models_dir: str | Path) -> go.Figur
     X_resampled, y_resampled = smote.fit_resample(X_train_scaled, y_train)
 
     fig = go.Figure()
-    for name, m in FRAUD_MODELS.items():
+    for name in FRAUD_MODELS:
+        m = get_fraud_model(name)
         if hasattr(m, "predict_proba"):
-            clone = copy.deepcopy(m)  # évite de modifier les instances partagées
-            clone.fit(X_resampled, y_resampled)
-            y_proba = clone.predict_proba(X_test_scaled)[:, 1]
+            m.fit(X_resampled, y_resampled)
+            y_proba = m.predict_proba(X_test_scaled)[:, 1]
             plot_roc_curve(y_test, y_proba, model_name=name, fig=fig, add_diagonal=False)
     fig.add_trace(
         go.Scatter(

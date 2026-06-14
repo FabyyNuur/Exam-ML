@@ -14,7 +14,7 @@ from sklearn.metrics import davies_bouldin_score, silhouette_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from src.constants import CLUSTER_API_COLUMNS, FRAUD_FEATURE_COLUMNS, TYPE_MAP
+from src.constants import CLUSTER_API_COLUMNS, DEFAULT_CLUSTER_LABELS, FRAUD_FEATURE_COLUMNS, TARGET_CLUSTER_K, TYPE_MAP
 from src.preprocessing import (
     clean_customer_data,
     engineer_customer_features,
@@ -249,14 +249,13 @@ def export_fraud_models(cv_results: dict) -> dict:
     models = []
     for name, scores in cv_results.items():
         roc = round(scores["mean"] * 100, 1)
+        cv_std = round(scores["std"] * 100, 1)
         models.append(
             {
                 "name": MODEL_DISPLAY_NAMES.get(name, name),
                 "key": name,
                 "roc": roc,
-                "precision": roc,
-                "f1": roc,
-                "rappel": roc,
+                "cv_std": cv_std,
             }
         )
     payload = {"models": models}
@@ -267,12 +266,12 @@ def export_fraud_models(cv_results: dict) -> dict:
 def _cluster_labels_from_metadata(models_dir: Path) -> tuple[int, dict[int, str]]:
     """Charge k optimal et libellés clusters depuis metadata.json."""
     metadata_path = models_dir / "metadata.json"
-    best_k = 2
-    cluster_labels: dict[int, str] = {0: "Digital", 1: "Premium"}
+    best_k = TARGET_CLUSTER_K
+    cluster_labels: dict[int, str] = dict(DEFAULT_CLUSTER_LABELS)
     if metadata_path.exists():
         meta = json.loads(metadata_path.read_text(encoding="utf-8"))
         cluster_meta = meta.get("cluster", {})
-        best_k = int(cluster_meta.get("best_k", 2))
+        best_k = int(cluster_meta.get("best_k", TARGET_CLUSTER_K))
         raw = cluster_meta.get("cluster_labels", cluster_labels)
         cluster_labels = {int(k): v for k, v in raw.items()}
     return best_k, cluster_labels

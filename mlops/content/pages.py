@@ -44,7 +44,7 @@ PAGES = [
         "insights": [
             "Parcours complet : exploration → prétraitement → modélisation → évaluation → déploiement.",
             "Exercice 1 : classification binaire à classe minoritaire rare — 0,11 % de fraudes (XGBoost + SMOTE).",
-            "Exercice 2 : clustering non supervisé (K-Means, k=2).",
+            "Exercice 2 : clustering non supervisé (K-Means, k=4 — Premium, Digital, Promo-sensible, Dormant).",
             "API FastAPI pour l'inférence en production.",
         ],
         "figures": [],
@@ -161,7 +161,7 @@ PAGES = [
         "title": "Performance & interprétabilité",
         "subtitle": "Métriques test set + analyse SHAP",
         "insights": [
-            "Sur le jeu de test, le modèle atteint un ROC-AUC de 0,997, un recall de 0,97 et un F1 de 0,61 au seuil de 30 %.",
+            "Sur le jeu de test, le modèle atteint une accuracy ≈ 0,999 (biaisée par le déséquilibre), un ROC-AUC de 0,997, un recall de 0,97 et un F1 de 0,61 au seuil de 30 %.",
             "Un faux positif correspond à une transaction normale bloquée à tort ; un faux négatif à une fraude non détectée, ce qui est l'erreur la plus critique.",
             "L'analyse SHAP montre que orig_zeroed, error_balance et amount sont parmi les variables les plus influentes.",
             "L'étude des faux positifs et faux négatifs permet d'affiner le seuil de décision selon la politique métier.",
@@ -171,8 +171,8 @@ PAGES = [
                 "ex1_best_model_eval.png",
                 "Évaluation XGBoost",
                 "Matrice de confusion & métriques",
-                "Au seuil de 30 %, le modèle atteint un recall d'environ 97 %, ce qui signifie que la quasi-totalité "
-                "des fraudes sont détectées. La precision reste plus modérée car les fraudes ne représentent que 0,11 % des transactions.",
+                "Au seuil de 30 %, le modèle atteint un recall d'environ 97 % et une accuracy élevée (~99,9 %), "
+                "mais cette dernière masque le déséquilibre des classes. La precision reste plus modérée car les fraudes ne représentent que 0,11 % des transactions.",
             ),
             (
                 "ex1_threshold_analysis.png",
@@ -303,18 +303,18 @@ PAGES = [
         "title": "Sélection de l'algorithme & k optimal",
         "subtitle": "K-Means, DBSCAN, Agglomerative, GMM",
         "insights": [
-            "La courbe du coude et le score de Silhouette (maximum ≈ 0,32 pour k=2) convergent vers un nombre restreint de segments — la question devient alors : préférons-nous plus de granularité (k élevé) ou des profils lisibles pour le marketing (k=2) ?",
+            "La courbe du coude et le score de Silhouette (maximum ≈ 0,32 pour k=2) indiquent une structure dominante à deux blocs — nous retenons néanmoins k=4 pour couvrir les quatre profils métier du sujet.",
             "K-Means, DBSCAN, Agglomerative et GMM ont été comparés : DBSCAN produit trop de bruit sur ce jeu, tandis que K-Means offre des centroïdes directement interprétables par les équipes métier.",
-            "Avec k=2, nous obtenons une séparation nette entre un segment Premium (revenus et dépenses élevés) et un segment Digital (achats web dominants) — un découpage suffisant pour piloter des campagnes différenciées sans sur-complexifier l'organisation.",
-            "Le dendrogramme hiérarchique confirme que la structure principale se situe entre 2 et 3 groupes, ce qui valide le choix de k=2 comme compromis entre finesse et actionnabilité.",
+            "Avec k=4, nous identifions Premium, Digital, Promo-sensible et Dormant — un découpage actionnable pour piloter fidélisation, offres web, coupons et réactivation.",
+            "Le dendrogramme hiérarchique confirme une structure principale entre 2 et 4 groupes ; k=4 équilibre finesse statistique et couverture des archétypes marketing.",
         ],
         "figures": [
             (
                 "ex2_kmeans_selection.png",
                 "Sélection de k",
                 "Silhouette & Elbow",
-                "Le coude d'inertie et le pic de Silhouette autour de k=2 indiquent que deux segments capturent l'essentiel de la variance comportementale. "
-                "Augmenter k améliore marginalement les métriques internes mais fragmente les groupes au point de les rendre difficiles à exploiter commercialement.",
+                "Le coude d'inertie et le pic de Silhouette autour de k=2 indiquent deux blocs dominants. "
+                "k=4 est retenu malgré une Silhouette légèrement inférieure pour identifier Premium, Digital, Promo-sensible et Dormant.",
             ),
             (
                 "ex2_pca_scree.png",
@@ -327,8 +327,8 @@ PAGES = [
                 "ex2_dendrogram.png",
                 "Dendrogramme",
                 "Clustering hiérarchique",
-                "Le dendrogramme montre une fusion progressive des observations : les premières scissions séparent clairement deux blocs principaux, "
-                "ce qui corrobore le choix de k=2 retenu par K-Means plutôt qu'un découpage en cinq ou six micro-segments.",
+                "Le dendrogramme montre une fusion progressive : les premières scissions séparent deux blocs, puis des sous-groupes — "
+                "ce qui corrobore un découpage en quatre segments marketing plutôt qu'un unique envoi massif.",
             ),
             (
                 "ex2_clustering_comparison.png",
@@ -348,8 +348,8 @@ PAGES = [
         "title": "Profils clients & recommandations",
         "subtitle": "Interprétation métier des clusters",
         "insights": [
-            "Avec une Silhouette d'environ 0,32 et un Davies-Bouldin de 1,29, la séparation reste modeste au regard des standards académiques, mais elle est suffisante pour orienter des campagnes marketing, où l'enjeu est l'actionnabilité plutôt que la perfection statistique.",
-            "Les centroïdes normalisés montrent que le revenu et la dépense totale discriminent fortement le cluster Premium, tandis que le nombre d'achats web et la récence caractérisent le cluster Digital.",
+            "Avec k=4, la Silhouette est inférieure au pic à k=2 (~0,32), mais le Davies-Bouldin reste acceptable — l'enjeu marketing est l'actionnabilité des quatre profils.",
+            "Les centroïdes normalisés discriminent Premium (revenu/dépenses), Digital (canal web), Promo-sensible (magasin/campagnes) et Dormant (récence élevée).",
             "La lecture des profils invite à se demander, pour chaque segment, quel canal privilégier et quel type d'offre maximisera la conversion sans cannibaliser la marge.",
         ],
         "figures": [
@@ -378,10 +378,9 @@ PAGES = [
         "title": "Profils clients & recommandations business",
         "subtitle": "Actions marketing par segment — synthèse stratégique",
         "insights": [
-            "Deux profils ressortent avec k=2 (Silhouette ≈ 0,32) : Premium (902 clients, 41 %) concentre revenu (~71 k€) et panier (~1 233 €) ; Digital (1 313 clients, 59 %) est le segment masse (~39 k€, ~178 € de panier, soit ≈ 7× moins).",
-            "Premium achète davantage partout (vins ~610 €, viandes ~357 €, 5,8 achats web) — le libellé « Digital » ne signifie pas « plus d'achats en ligne » : ce cluster achète moins sur tous les canaux (2,9 web, 3,9 magasin) mais a plus d'enfants (1,3 vs 0,5).",
-            "La récence d'achat (~49 j) et l'âge (~54–57 ans) ne séparent pas les clusters : le levier discriminant est le couple revenu + dépense totale.",
-            "Actions : Premium → fidélité haut de gamme, cross-sell vins/viandes, pas de promos agressives ; Digital → offres accessibles ciblées, sans envoi massif de coupons.",
+            "Quatre profils avec k=4 : Premium (haute valeur), Digital (segment masse), Promo-sensible (réceptif aux offres), Dormant (faible activité récente).",
+            "Premium concentre revenu et panier élevés ; Digital le segment volume ; Promo-sensible réagit aux campagnes ; Dormant nécessite réactivation.",
+            "Actions : Premium → fidélité haut de gamme ; Digital → offres web ciblées ; Promo-sensible → coupons ; Dormant → campagne de réactivation.",
         ],
         "figures": [
             (
@@ -412,6 +411,7 @@ PAGES = [
         "insights": [
             "Pipeline reproductible : mlops/pipeline.py (validate → train → export).",
             "Modèles versionnés dans models/*.joblib + metadata.json.",
+            "Déploiement Docker : Dockerfile + docker compose up (voir README).",
             "Endpoint /health et /metadata pour le monitoring.",
             "Simulation PSI (Population Stability Index) pour détecter la dérive.",
         ],
