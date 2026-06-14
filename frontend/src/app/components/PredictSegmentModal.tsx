@@ -27,7 +27,7 @@ function TestIntro() {
         <Target size={16} /> Ce que fait ce test
       </p>
       <p className="mb-2">
-        Le modèle <strong>K-Means (k=4)</strong> reçoit 7 indicateurs client (revenu, âge,
+        Le modèle <strong>K-Means (k=2)</strong> reçoit 7 indicateurs client (revenu, âge,
         dépenses, achats web/magasin, récence, enfants), les standardise comme à
         l&apos;entraînement, puis assigne le cluster le plus proche → profil{' '}
         <strong>Premium</strong>, <strong>Digital</strong>, <strong>Promo-sensible</strong> ou{' '}

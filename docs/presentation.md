@@ -57,11 +57,11 @@ Seuil 30 % pour maximiser la détection.
 
 ---
 
-## Slide 7 — Exercice 2 : choix k=4
+## Slide 7 — Exercice 2 : choix de k
 
-- Pic Silhouette à **k=2** (~0,32)
-- **k=4 retenu** : Premium, Digital, Promo-sensible, Dormant
-- Compromis statistique / actionnabilité marketing
+- Pic Silhouette à **k=2** (~0,32) → **modèle production / API**
+- Analyse complémentaire **k=4** : Premium, Digital, Promo-sensible, Dormant
+- Distinction claire : optimum statistique vs profils marketing du sujet
 
 ---
 

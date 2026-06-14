@@ -15,7 +15,12 @@ from xgboost import XGBClassifier
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.constants import DEFAULT_CLUSTER_LABELS, TARGET_CLUSTER_K  # noqa: E402
+from src.constants import (  # noqa: E402
+    BUSINESS_PROFILE_LABELS,
+    BUSINESS_PROFILES_K,
+    DEFAULT_CLUSTER_LABELS,
+    TARGET_CLUSTER_K,
+)
 from src.models import save_model  # noqa: E402
 
 MODELS_DIR = ROOT / "models"
@@ -40,6 +45,7 @@ save_model(cluster_model, MODELS_DIR / "cluster_model.joblib")
 save_model(cluster_scaler, MODELS_DIR / "cluster_scaler.joblib")
 
 cluster_labels = {str(k): v for k, v in DEFAULT_CLUSTER_LABELS.items()}
+business_cluster_labels = {str(k): v for k, v in BUSINESS_PROFILE_LABELS.items()}
 metadata = {
     "fraud": {
         "model_name": "xgboost",
@@ -58,9 +64,9 @@ metadata = {
         "silhouette": 0.25,
         "davies_bouldin": 1.35,
         "cluster_labels": cluster_labels,
+        "business_profiles_k": BUSINESS_PROFILES_K,
+        "business_cluster_labels": business_cluster_labels,
     },
 }
-(MODELS_DIR / "metadata.json").write_text(
-    json.dumps(metadata, indent=2), encoding="utf-8"
-)
+(MODELS_DIR / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
 print("Modèles CI créés dans models/")

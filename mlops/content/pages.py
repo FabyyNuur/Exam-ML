@@ -44,7 +44,7 @@ PAGES = [
         "insights": [
             "Parcours complet : exploration → prétraitement → modélisation → évaluation → déploiement.",
             "Exercice 1 : classification binaire à classe minoritaire rare — 0,11 % de fraudes (XGBoost + SMOTE).",
-            "Exercice 2 : clustering non supervisé (K-Means, k=4 — Premium, Digital, Promo-sensible, Dormant).",
+            "Exercice 2 : clustering non supervisé (K-Means k=2 en production ; analyse k=4 Premium, Digital, Promo-sensible, Dormant).",
             "API FastAPI pour l'inférence en production.",
         ],
         "figures": [],
@@ -303,10 +303,10 @@ PAGES = [
         "title": "Sélection de l'algorithme & k optimal",
         "subtitle": "K-Means, DBSCAN, Agglomerative, GMM",
         "insights": [
-            "La courbe du coude et le score de Silhouette (maximum ≈ 0,32 pour k=2) indiquent une structure dominante à deux blocs — nous retenons néanmoins k=4 pour couvrir les quatre profils métier du sujet.",
+            "La courbe du coude et le score de Silhouette (maximum ≈ 0,32 pour k=2) indiquent deux blocs dominants — k=2 est retenu pour le modèle déployé.",
             "K-Means, DBSCAN, Agglomerative et GMM ont été comparés : DBSCAN produit trop de bruit sur ce jeu, tandis que K-Means offre des centroïdes directement interprétables par les équipes métier.",
-            "Avec k=4, nous identifions Premium, Digital, Promo-sensible et Dormant — un découpage actionnable pour piloter fidélisation, offres web, coupons et réactivation.",
-            "Le dendrogramme hiérarchique confirme une structure principale entre 2 et 4 groupes ; k=4 équilibre finesse statistique et couverture des archétypes marketing.",
+            "Une analyse complémentaire k=4 identifie Premium, Digital, Promo-sensible et Dormant pour piloter fidélisation, offres web, coupons et réactivation.",
+            "Le dendrogramme hiérarchique confirme une structure principale à deux blocs, avec des sous-groupes exploitables en analyse marketing k=4.",
         ],
         "figures": [
             (
@@ -314,7 +314,7 @@ PAGES = [
                 "Sélection de k",
                 "Silhouette & Elbow",
                 "Le coude d'inertie et le pic de Silhouette autour de k=2 indiquent deux blocs dominants. "
-                "k=4 est retenu malgré une Silhouette légèrement inférieure pour identifier Premium, Digital, Promo-sensible et Dormant.",
+                "k=2 est retenu en production ; une analyse complémentaire k=4 explore Premium, Digital, Promo-sensible et Dormant.",
             ),
             (
                 "ex2_pca_scree.png",
@@ -348,8 +348,8 @@ PAGES = [
         "title": "Profils clients & recommandations",
         "subtitle": "Interprétation métier des clusters",
         "insights": [
-            "Avec k=4, la Silhouette est inférieure au pic à k=2 (~0,32), mais le Davies-Bouldin reste acceptable — l'enjeu marketing est l'actionnabilité des quatre profils.",
-            "Les centroïdes normalisés discriminent Premium (revenu/dépenses), Digital (canal web), Promo-sensible (magasin/campagnes) et Dormant (récence élevée).",
+            "k=2 maximise la Silhouette (~0,32) et alimente le modèle API ; une passe k=4 sert uniquement à l'interprétation marketing des quatre profils du sujet.",
+            "Les centroïdes normalisés (k=4) discriminent Premium (revenu/dépenses), Digital (canal web), Promo-sensible (magasin/campagnes) et Dormant (récence élevée).",
             "La lecture des profils invite à se demander, pour chaque segment, quel canal privilégier et quel type d'offre maximisera la conversion sans cannibaliser la marge.",
         ],
         "figures": [
@@ -378,7 +378,7 @@ PAGES = [
         "title": "Profils clients & recommandations business",
         "subtitle": "Actions marketing par segment — synthèse stratégique",
         "insights": [
-            "Quatre profils avec k=4 : Premium (haute valeur), Digital (segment masse), Promo-sensible (réceptif aux offres), Dormant (faible activité récente).",
+            "Quatre profils via analyse k=4 : Premium (haute valeur), Digital (segment masse), Promo-sensible (réceptif aux offres), Dormant (faible activité récente). Modèle production : k=2.",
             "Premium concentre revenu et panier élevés ; Digital le segment volume ; Promo-sensible réagit aux campagnes ; Dormant nécessite réactivation.",
             "Actions : Premium → fidélité haut de gamme ; Digital → offres web ciblées ; Promo-sensible → coupons ; Dormant → campagne de réactivation.",
         ],

@@ -152,9 +152,9 @@ export function interpretClusterProfilesSummary(
       ? ` (pic Silhouette ${meta.silhouette_at_peak_k.toFixed(2)} à k=${meta.silhouette_peak_k})`
       : "";
   return (
-    `K-Means avec k=${meta?.best_k ?? 4} identifie ${stats.length} profils — ${names} — ` +
-    `(Silhouette ${sil}${peak}). Le pic statistique à k=2 est documenté ; k=4 est retenu pour l'actionnabilité marketing ` +
-    `et la couverture des quatre archétypes demandés par le sujet.`
+    `K-Means avec k=${meta?.best_k ?? 2} en production (Silhouette ${sil}${peak}). ` +
+    `Une analyse complémentaire k=${meta?.business_profiles_k ?? 4} couvre Premium, Digital, Promo-sensible et Dormant ` +
+    `pour les recommandations marketing, sans forcer le modèle déployé.`
   );
 }
 
@@ -242,7 +242,7 @@ export function interpretClusterBusinessRecommendations(
     ];
   }
   recs.push(
-    `Exploitation : recalcul mensuel des segments et suivi Silhouette (≈ ${meta?.silhouette?.toFixed(2) ?? "—"} à k=${meta?.best_k ?? 4}).`,
+    `Exploitation : recalcul mensuel des segments et suivi Silhouette (≈ ${meta?.silhouette?.toFixed(2) ?? "—"} à k=${meta?.best_k ?? 2} en production).`,
   );
   return recs;
 }
@@ -258,8 +258,8 @@ export function interpretClusterBusinessSynthesis(
     ];
   }
   return [
-    `Le clustering (k=${meta?.best_k ?? 4}, Silhouette ≈ ${meta?.silhouette?.toFixed(2) ?? "—"}) distingue quatre profils : ${names}.`,
-    `Le pic Silhouette à k=${meta?.silhouette_peak_k ?? 2} est documenté ; k=4 est retenu pour couvrir Premium, Digital, Promo-sensible et Dormant.`,
+    `Production k=${meta?.best_k ?? 2} (Silhouette ≈ ${meta?.silhouette?.toFixed(2) ?? "—"}) : ${names}.`,
+    `Analyse complémentaire k=${meta?.business_profiles_k ?? 4} pour Premium, Digital, Promo-sensible et Dormant.`,
     `Même budget marketing, meilleur ROI : actions différenciées par profil plutôt qu'une campagne unique à toute la base.`,
   ];
 }
@@ -547,6 +547,6 @@ export function interpretClusterPca(
   const sizes = clusterCounts.map((c) => `${c.name} n=${fmt(c.count)}`).join(", ");
   return (
     `${evText}Les nuages ${sizes} se séparent en 2D (Silhouette modérée : ${sil}). ` +
-    `k=${clusterMeta?.best_k ?? 4} couvre Premium, Digital, Promo-sensible et Dormant pour le ciblage marketing.`
+    `k=${clusterMeta?.best_k ?? 2} en production ; analyse k=${clusterMeta?.business_profiles_k ?? 4} pour le ciblage marketing.`
   );
 }

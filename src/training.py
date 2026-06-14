@@ -29,7 +29,11 @@ from src.analytics_export import (
     export_fraud_models,
 )
 from src.charts.export import export_all_charts
-from src.constants import CLUSTER_API_COLUMNS, FRAUD_THRESHOLD, TARGET_CLUSTER_K
+from src.constants import (
+    BUSINESS_PROFILES_K,
+    CLUSTER_API_COLUMNS,
+    FRAUD_THRESHOLD,
+)
 from src.inference_prep import prepare_cluster_matrix, prepare_fraud_matrix
 from src.models import (
     FRAUD_MODELS,
@@ -153,7 +157,7 @@ def train_cluster_model(
         if sil > silhouette_at_peak:
             silhouette_peak_k, silhouette_at_peak = k, sil
 
-    best_k = TARGET_CLUSTER_K
+    best_k = silhouette_peak_k
     model = KMeans(n_clusters=best_k, random_state=RANDOM_STATE, n_init=10)
     labels = model.fit_predict(X_scaled)
     best_silhouette = float(silhouette_score(X_scaled, labels))
@@ -163,6 +167,13 @@ def train_cluster_model(
         scaler.inverse_transform(model.cluster_centers_), columns=CLUSTER_API_COLUMNS
     )
     cluster_labels = _assign_cluster_labels(centroids)
+
+    km_business = KMeans(n_clusters=BUSINESS_PROFILES_K, random_state=RANDOM_STATE, n_init=10)
+    km_business.fit(X_scaled)
+    centroids_business = pd.DataFrame(
+        scaler.inverse_transform(km_business.cluster_centers_), columns=CLUSTER_API_COLUMNS
+    )
+    business_cluster_labels = _assign_cluster_labels(centroids_business)
 
     save_model(model, models_dir / "cluster_model.joblib")
     save_model(scaler, models_dir / "cluster_scaler.joblib")
@@ -175,6 +186,8 @@ def train_cluster_model(
         "silhouette": best_silhouette,
         "davies_bouldin": db_score,
         "cluster_labels": cluster_labels,
+        "business_profiles_k": BUSINESS_PROFILES_K,
+        "business_cluster_labels": business_cluster_labels,
     }
 
     metadata_path = models_dir / "metadata.json"

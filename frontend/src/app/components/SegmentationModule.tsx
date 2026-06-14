@@ -577,10 +577,9 @@ export function SegmentationModule() {
                 </p>
                 <p>
                   Quatre algorithmes ont été comparés (K-Means, DBSCAN,
-                  Agglomerative, GMM) : K-Means avec k=4 est retenu pour
-                  identifier les quatre profils métier du sujet (Premium,
-                  Digital, Promo-sensible, Dormant), même si le pic de
-                  Silhouette se situe à k=2 (~0,32).
+                  Agglomerative, GMM) : K-Means avec k=2 est retenu en production
+                  (pic Silhouette), avec une analyse complémentaire k=4 pour
+                  identifier Premium, Digital, Promo-sensible et Dormant.
                 </p>
                 <p>
                   Les quatre segments — Premium, Digital, Promo-sensible et

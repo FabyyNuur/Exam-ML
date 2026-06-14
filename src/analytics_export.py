@@ -15,6 +15,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from src.constants import (
+    BUSINESS_PROFILE_LABELS,
+    BUSINESS_PROFILES_K,
     CLUSTER_API_COLUMNS,
     DEFAULT_CLUSTER_LABELS,
     FRAUD_FEATURE_COLUMNS,
@@ -283,6 +285,20 @@ def _cluster_labels_from_metadata(models_dir: Path) -> tuple[int, dict[int, str]
     return best_k, cluster_labels
 
 
+def _business_labels_from_metadata(models_dir: Path) -> tuple[int, dict[int, str]]:
+    """Charge k=4 complémentaire et libellés marketing depuis metadata.json."""
+    metadata_path = models_dir / "metadata.json"
+    business_k = BUSINESS_PROFILES_K
+    business_labels: dict[int, str] = dict(BUSINESS_PROFILE_LABELS)
+    if metadata_path.exists():
+        meta = json.loads(metadata_path.read_text(encoding="utf-8"))
+        cluster_meta = meta.get("cluster", {})
+        business_k = int(cluster_meta.get("business_profiles_k", BUSINESS_PROFILES_K))
+        raw = cluster_meta.get("business_cluster_labels", business_labels)
+        business_labels = {int(k): v for k, v in raw.items()}
+    return business_k, business_labels
+
+
 def export_cluster_eda(
     cluster_path: str | Path,
     models_dir: str | Path | None = None,
@@ -338,10 +354,11 @@ def export_cluster_eda(
             )
 
     best_k, cluster_labels = _cluster_labels_from_metadata(models_path)
+    business_k, business_labels = _business_labels_from_metadata(models_path)
     X_df = _prepare_cluster_matrix(df_raw)
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_df)
-    km = KMeans(n_clusters=best_k, random_state=42, n_init=10)
+    km = KMeans(n_clusters=business_k, random_state=42, n_init=10)
     cluster_ids = km.fit_predict(X_scaled)
 
     spend_key_map = {
@@ -366,7 +383,7 @@ def export_cluster_eda(
             "response": int(row["Response"]) if "Response" in row else 0,
             "education": str(row.get("Education", "Inconnu")),
             "marital_status": str(row.get("Marital_Status", "Inconnu")),
-            "cluster": cluster_labels.get(int(cluster_ids[idx]), f"Cluster {cluster_ids[idx]}"),
+            "cluster": business_labels.get(int(cluster_ids[idx]), f"Cluster {cluster_ids[idx]}"),
         }
         for col, key in spend_key_map.items():
             if col in row:

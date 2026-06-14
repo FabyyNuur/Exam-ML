@@ -45,9 +45,16 @@ CLUSTER_API_COLUMNS = [
     "Children",
 ]
 
-TARGET_CLUSTER_K = 4
+TARGET_CLUSTER_K = 2  # k retenu en production (pic Silhouette)
+
+BUSINESS_PROFILES_K = 4  # analyse complémentaire — 4 archétypes marketing du sujet
 
 DEFAULT_CLUSTER_LABELS = {
+    0: "Digital",
+    1: "Premium",
+}
+
+BUSINESS_PROFILE_LABELS = {
     0: "Digital",
     1: "Premium",
     2: "Promo-sensible",

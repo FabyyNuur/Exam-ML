@@ -70,12 +70,13 @@ Cinq approches testées :
 Algorithmes comparés : **K-Means**, DBSCAN, Agglomerative, GMM.
 
 - **Pic Silhouette** : k=2 (≈ 0,32).
-- **Choix production** : **k=4** pour couvrir les quatre profils du sujet.
+- **Choix production** : **k=2** (optimal statistique, modèle API).
+- **Analyse complémentaire** : **k=4** pour les quatre profils marketing du sujet.
 
-| Métrique | k=2 (pic) | k=4 (retenu) |
-|----------|-----------|--------------|
-| Silhouette | ≈ 0,32 | légèrement inférieure |
-| Davies-Bouldin | — | acceptable |
+| Métrique | k=2 (production) | k=4 (analyse marketing) |
+|----------|------------------|-------------------------|
+| Silhouette | ≈ 0,32 (pic) | légèrement inférieure |
+| Davies-Bouldin | acceptable | acceptable |
 
 ### 3.3 Profils identifiés
 
@@ -120,5 +121,5 @@ Données CSV → validation (pipeline.py) → entraînement (training.py)
 
 - `detection_fraude.csv` (~80 Mo) n'est pas versionné dans git — à placer localement après clone.
 - L'accuracy seule est insuffisante pour la fraude ; le recall et le ROC-AUC priment.
-- k=4 sacrifie légèrement la Silhouette au profit de l'actionnabilité marketing.
+- k=2 en production (Silhouette optimale) ; k=4 réservé à l'analyse marketing des quatre profils.
 - Monitoring PSI simulé — à connecter à un flux de production réel en entreprise.

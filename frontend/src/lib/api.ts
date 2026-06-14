@@ -23,6 +23,8 @@ export interface ClusterMetadata {
   silhouette: number;
   davies_bouldin: number;
   cluster_labels: Record<string, string>;
+  business_profiles_k?: number;
+  business_cluster_labels?: Record<string, string>;
 }
 
 export interface MetadataResponse {

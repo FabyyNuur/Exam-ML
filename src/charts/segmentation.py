@@ -25,9 +25,14 @@ from src.charts.sampling import (
     PLOTLY_SAMPLE_SCATTER,
     sample_df,
 )
-from src.constants import CLUSTER_API_COLUMNS, DEFAULT_CLUSTER_LABELS, TARGET_CLUSTER_K
+from src.constants import (
+    BUSINESS_PROFILES_K,
+    CLUSTER_API_COLUMNS,
+    DEFAULT_CLUSTER_LABELS,
+    TARGET_CLUSTER_K,
+)
 from src.preprocessing import clean_customer_data, engineer_customer_features, load_cluster_data
-from src.training import prepare_cluster_matrix
+from src.training import _assign_cluster_labels, prepare_cluster_matrix
 from src.utils import COLORS, plot_silhouette
 
 RANDOM_STATE = 42
@@ -45,12 +50,18 @@ def _cluster_context(cluster_path: str | Path, models_dir: str | Path) -> dict:
     metadata_path = Path(models_dir) / "metadata.json"
     best_k = TARGET_CLUSTER_K
     cluster_labels: dict[int, str] = dict(DEFAULT_CLUSTER_LABELS)
+    business_k = BUSINESS_PROFILES_K
+    business_cluster_labels: dict[int, str] = {}
     if metadata_path.exists():
         meta = json.loads(metadata_path.read_text(encoding="utf-8"))
         cluster_meta = meta.get("cluster", {})
         best_k = int(cluster_meta.get("best_k", TARGET_CLUSTER_K))
         raw_labels = cluster_meta.get("cluster_labels", cluster_labels)
         cluster_labels = {int(k): v for k, v in raw_labels.items()}
+        business_k = int(cluster_meta.get("business_profiles_k", BUSINESS_PROFILES_K))
+        raw_business = cluster_meta.get("business_cluster_labels", {})
+        if raw_business:
+            business_cluster_labels = {int(k): v for k, v in raw_business.items()}
 
     pca = PCA(n_components=2, random_state=RANDOM_STATE)
     X_pca = pca.fit_transform(X_scaled)
@@ -62,11 +73,21 @@ def _cluster_context(cluster_path: str | Path, models_dir: str | Path) -> dict:
     centroids = pd.DataFrame(
         scaler.inverse_transform(km.cluster_centers_), columns=CLUSTER_API_COLUMNS
     )
-    cluster_profiles = centroids
-    cluster_names = cluster_labels
+
+    km_business = KMeans(n_clusters=business_k, random_state=RANDOM_STATE, n_init=10)
+    business_labels = km_business.fit_predict(X_scaled)
+    business_centroids = pd.DataFrame(
+        scaler.inverse_transform(km_business.cluster_centers_), columns=CLUSTER_API_COLUMNS
+    )
+    if not business_cluster_labels:
+        business_cluster_labels = _assign_cluster_labels(business_centroids)
+
+    cluster_profiles = business_centroids
+    cluster_names = business_cluster_labels
 
     df_result = df_clean.copy()
-    df_result["Cluster"] = kmeans_labels
+    df_result["Cluster"] = business_labels
+    df_result["Profil"] = df_result["Cluster"].map(business_cluster_labels)
 
     return {
         "df": df,
@@ -77,9 +98,13 @@ def _cluster_context(cluster_path: str | Path, models_dir: str | Path) -> dict:
         "X_pca_full": X_pca_full,
         "pca_full": pca_full,
         "best_k": best_k,
+        "business_k": business_k,
         "kmeans_labels": kmeans_labels,
+        "business_labels": business_labels,
         "cluster_profiles": cluster_profiles,
         "cluster_names": cluster_names,
+        "production_cluster_labels": cluster_labels,
+        "business_cluster_labels": business_cluster_labels,
         "scaler": scaler,
     }
 
@@ -480,7 +505,7 @@ def build_radar_profiles(cluster_path: str | Path, models_dir: str | Path) -> go
     ctx = _cluster_context(cluster_path, models_dir)
     cluster_profiles = ctx["cluster_profiles"]
     cluster_names = ctx["cluster_names"]
-    best_k = ctx["best_k"]
+    business_k = ctx.get("business_k", ctx["best_k"])
     radar_cols = [
         c
         for c in [
@@ -498,7 +523,7 @@ def build_radar_profiles(cluster_path: str | Path, models_dir: str | Path) -> go
     norm_profiles = MinMaxScaler().fit_transform(cluster_profiles[radar_cols])
     palette = px.colors.qualitative.T10
     fig = go.Figure()
-    for i in range(min(best_k, norm_profiles.shape[0])):
+    for i in range(min(business_k, norm_profiles.shape[0])):
         row = norm_profiles[i]
         values = row.tolist() + [row[0]]
         theta = radar_cols + [radar_cols[0]]
